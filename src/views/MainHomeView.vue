@@ -1,0 +1,53 @@
+<script setup lang="ts">
+import TheMenu from "../components/TheMenu.vue";
+import AppCard from "../components/AppCard.vue";
+import router from "../router";
+import {useAuthorizationStore} from "../stores/authorization.ts";
+
+const authorizationStore = useAuthorizationStore();
+
+function runFinance() {
+  console.log("START - finance()");
+  if (authorizationStore.hasAccessFinance) {
+    router.push({
+      name: "FinanceHome",
+      // params: { idUser: 0, isEdit: "false" },
+    });
+  }
+}
+
+function runLibrary() {
+  console.log("START - library()");
+  if (authorizationStore.hasAccessLibrary) {
+    router.push({
+      name: "LibraryHome",
+      // params: { idUser: 0, isEdit: "false" },
+    });
+  }
+}
+</script>
+
+<template>
+  <TheMenu />
+  <h1
+    v-if="!authorizationStore.isAuthenticated"
+    class="color-orange flex justify-content-center mt-8"
+  >
+    Musisz się najpierw zalogować... ;)
+  </h1>
+  <div v-else class="flex flex-row justify-content-center gap-2 mt-5">
+    <AppCard
+      text-content="Kredyty, płatności i zakupy"
+      text-title="Finanse"
+      @clicked="runFinance"
+    />
+    <AppCard
+      text-content="Książki, audiobooki, ebooki"
+      text-title="Biblioteka"
+      @clicked="runLibrary"
+    />
+  </div>
+  <TheFooter />
+</template>
+
+<style scoped></style>
