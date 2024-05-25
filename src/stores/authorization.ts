@@ -1,129 +1,229 @@
-import { defineStore } from "pinia";
-import User from "../types/User.ts";
+import {defineStore} from "pinia";
 import httpCommon from "../http-common.ts";
 import jwt_decode from "jwt-decode";
-// import * as jwt_decode from 'jwt-decode';
+import {ErrorService} from "@/service/ErrorService.ts";
+import {useSettingStore} from "@/stores/setting.ts";
+import moment from "moment";
+
 export const useAuthorizationStore = defineStore("authorization", {
-  state: () => ({
-    token: "null",
-    loginError: false,
-    btnDisabled: false,
-    isAuthenticated: false,
-    busyIcon: false,
-    user: {
-      id: 0,
-      username: "test",
-      firstName: "Test",
-    } as User,
-    userPrivileges: [] as string[],
-  }),
+    state: () => ({
+        token: localStorage.getItem('accessToken') || null,
+        refreshToken: localStorage.getItem('refreshToken') || null,
+        loginError: false,
+        btnDisabled: false,
+        isAuthenticated: false,
+        loading: false,
+        username: localStorage.getItem('username') || "",
+        userPrivileges: [] as string[],
+    }),
 
-  //getters = computed
-  getters: {
-    hasAccessGoAhead(): boolean {
-      console.log("hasAccessGoAhead()");
-      try {
-        // console.log("token : ", this.token);
-        const decoded:any = jwt_decode(this.token);
-        // console.log("token decoded: ", decoded);
-        return (
-          decoded.authorities.includes("ROLE_GOAHEAD") ||
-          decoded.authorities.includes("ROLE_ADMIN")
-        );
-      } catch (error) {
-        console.log("hasAccessGoAhead() ERROR", error);
-        return false;
-      }
+    //getters = computed
+    getters: {
+
+        isAuthenticatedOrToken():boolean{
+            if(this.token) {
+                const decoded: any = jwt_decode(this.token);
+                return this.isAuthenticated || moment.unix(decoded.exp).isAfter(moment())
+            }
+            return this.isAuthenticated;
+        },
+
+        hasAccessGoAhead(): boolean {
+            console.log("hasAccessGoAhead()");
+            try {
+                // console.log("token : ", this.token);
+                const decoded: any = jwt_decode(this.token);
+                // console.log("token decoded: ", decoded);
+                return (
+                    decoded.authorities.includes("ROLE_GOAHEAD") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessGoAhead() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessFinance(): boolean {
+            console.log("hasAccessFinance()");
+            try {
+                // console.log("token : ", this.token);
+                const decoded: any = jwt_decode(this.token);
+                // console.log("token decoded: ", decoded);
+                return (
+                    decoded.authorities.includes("ROLE_FINANCE") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessFinance() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasks(): boolean {
+            console.log("hasAccessTasks()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return (
+                    decoded.authorities.includes("ROLE_TASKS") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        isEmployee(): boolean {
+            console.log("isEmployee()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return decoded.idEmployee > 0;
+            } catch (error) {
+                console.log("isEmployee() ERROR", error);
+                return false;
+            }
+        },
+        isEmployeeOrAdmin(): boolean {
+            console.log("isEmployee()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                if (decoded.authorities.includes("ROLE_ADMIN"))
+                    return true;
+                return decoded.idEmployee > 0;
+            } catch (error) {
+                console.log("isEmployee() ERROR", error);
+                return false;
+            }
+        },
+        isDesigner(): boolean {
+            console.log("isDesigner()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return decoded.idDesigner > 0;
+            } catch (error) {
+                console.log("isDesigner() ERROR", error);
+                return false;
+            }
+        },
+        isDesignerOrAdmin(): boolean {
+            console.log("isDesigner()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                if (decoded.authorities.includes("ROLE_ADMIN"))
+                    return true;
+                return decoded.idDesigner > 0;
+            } catch (error) {
+                console.log("isDesigner() ERROR", error);
+                return false;
+            }
+        },
+        getUserDesignerId(): number {
+            console.log("getUserDesignerId()");
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return decoded.idDesigner;
+            } catch (error) {
+                console.log("getUserDesignerId() ERROR", error);
+                return 0;
+            }
+        },
+
     },
-    hasAccessFinance(): boolean {
-      console.log("hasAccessFinance()");
-      try {
-        // console.log("token : ", this.token);
-        const decoded:any = jwt_decode(this.token);
-        // console.log("token decoded: ", decoded);
-        return (
-          decoded.authorities.includes("ROLE_FINANCE") ||
-          decoded.authorities.includes("ROLE_ADMIN")
-        );
-      } catch (error) {
-        console.log("hasAccessFinance() ERROR", error);
-        return false;
-      }
+
+    //actions = metody w komponentach
+    actions: {
+        logUser(token: string, refreshToken: string) {
+            this.token = token;
+            localStorage.setItem('accessToken', token);
+            this.isAuthenticated = true;
+            const decoded: any = jwt_decode(this.token);
+            this.username = decoded.sub;
+            localStorage.setItem('username', decoded.sub);
+
+            this.refreshToken = refreshToken;
+            localStorage.setItem('refreshToken', refreshToken);
+        },
+        //
+        //LOGIN
+        //
+        async login(username: string, password: string) {
+            console.log("START - login()");
+            this.loading = true;
+            this.btnDisabled = true;
+            try {
+                const res = await httpCommon
+                    .post("/v1/auth/login", {
+                        username: username,
+                        password: password,
+                    });
+
+                if (!res.data.accessToken && res.status != 200) {
+                    console.log("START - loginFailed()");
+                    this.loginError = true;
+                    this.$reset();
+
+                    this.loading = false;
+                    this.btnDisabled = false;
+                    return false;
+                }
+
+                this.logUser(res.data.accessToken, res.data.refreshToken);
+
+                this.loading = false;
+                this.btnDisabled = false;
+                this.loginError = false;
+
+                return true;
+            } catch (e) {
+                console.log("ERROR login(): ", e);
+                this.$reset();
+                this.loginError = true;
+                if (ErrorService.isAxiosError(e)) {
+                    ErrorService.validateError(e);
+                } else {
+                    console.log("An unexpected error occurred: ", e);
+                }
+            } finally {
+                this.loading = false;
+                this.btnDisabled = false;
+                console.log("END - login()");
+            }
+        },
+        //
+        //LOGOUT
+        //
+        logout(): void {
+            console.log("START - logout()");
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('username');
+            this.$reset(); //store reset
+            this.router.replace({name: "login"});
+        },
+        //
+        //REFRESH
+        //
+        async refresh() {
+            console.log("START - refresh()");
+            const refreshToken = localStorage.getItem('refreshToken') || null;
+            try {
+                const response = await httpCommon
+                    .post("/v1/auth/refresh", {
+                        refreshToken: refreshToken,
+                    });
+                if (response.status === 200) {
+                    console.log("refresh() - success - update tokens");
+                    this.logUser(response.data.accessToken, response.data.refreshToken);
+                    const settingStore = useSettingStore();
+                    if (settingStore.settings.userId === 0) {
+                        await settingStore.getSettingsFromDb();
+                    }
+
+                }
+                return response;
+            } catch (e) {
+                console.log("ERROR refresh(): ", e);
+                this.logout();
+                throw e;
+            }
+        }
     },
-    hasAccessLibrary(): boolean {
-      console.log("hasAccessFinance()");
-      try {
-        // console.log("token : ", this.token);
-        const decoded:any = jwt_decode(this.token);
-        // console.log("token decoded: ", decoded);
-        return (
-          decoded.authorities.includes("ROLE_LIBRARY") ||
-          decoded.authorities.includes("ROLE_ADMIN")
-        );
-      } catch (error) {
-        console.log("hasAccessLibrary() ERROR", error);
-        return false;
-      }
-    },
-  },
-
-  //actions = metody w komponentach
-  actions: {
-    //
-    //LOGIN
-    //
-    login(username: string, password: string) {
-      console.log("START - login()");
-      this.busyIcon = true;
-      this.btnDisabled = true;
-      httpCommon
-        .post("/auth/login", {
-          username: username,
-          password: password,
-        })
-        .then((res) => {
-          console.log("login() - SUCCESS");
-          // console.log("data: " + JSON.stringify(res.headers));
-          // console.log("header token: " + res.headers["jwt-token"]);
-
-          if (!res.headers["jwt-token"] && res.status != 200) {
-            console.log("START - loginFailed()");
-            this.loginError = true;
-            this.$reset();
-
-            this.busyIcon = false;
-            this.btnDisabled = false;
-            return;
-          }
-
-          this.token = res.headers["jwt-token"];
-          // console.log("token: " + this.token);
-          this.isAuthenticated = true;
-          this.user = res.data;
-
-          this.busyIcon = false;
-          this.btnDisabled = false;
-          this.loginError = false;
-
-          this.router.back(); // replace({name: 'home'});
-        })
-        .catch(async (e) => {
-          console.log("login(e) - ERROR ", e);
-          this.$reset();
-
-          this.busyIcon = false;
-          this.btnDisabled = false;
-          this.loginError = true;
-          console.log(this.loginError);
-        });
-    },
-    //
-    //LOGOUT
-    //
-    logout(): void {
-      console.log("START - logout()");
-      this.$reset(); //store reset
-      this.router.replace({ name: "Home" });
-    },
-  },
 });

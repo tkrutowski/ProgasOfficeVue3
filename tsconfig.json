@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "types": ["node"],
+    "baseUrl": ".", // To ustawia katalog projektu jako bazowy.
+    "paths": {
+      "@/*": ["src/*"] // To mapuje wszystkie importy zaczynające się od @ na katalog src.
+    },
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -18,7 +23,8 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [{ "path": "./tsconfig.node.json" }]

@@ -7,6 +7,8 @@ interface User {
   username: string;
   enabled: boolean;
   notLocked: boolean;
+  idEmployee: number;
+  idDesigner: number;
 }
 
 export default User;

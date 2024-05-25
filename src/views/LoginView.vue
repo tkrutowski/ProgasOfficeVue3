@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { useAuthorizationStore } from "../stores/authorization";
-import { onMounted, ref } from "vue";
+import {useAuthorizationStore} from "../stores/authorization";
+import {useDesignerStore} from "@/stores/designers.ts";
+import {onMounted, ref} from "vue";
 import OfficeButton from "../components/OfficeButton.vue";
 
 const authorizationStore = useAuthorizationStore();
+const designerStore = useDesignerStore();
+import {useSettingStore} from "@/stores/setting.ts";
+import router from "@/router";
 
+const settingStore = useSettingStore();
 const username = ref<string>("");
 const password = ref<string>("");
 
@@ -12,62 +17,95 @@ onMounted(() => {
   console.log("MOUNTED");
   authorizationStore.loginError = false;
 });
+
+async function login() {
+  let result = await authorizationStore.login(username.value, password.value);
+
+  if (result) {
+    await settingStore.getSettingsFromDb()
+    designerStore.refreshDesignerCache()
+    // router.back();
+    goBack()
+  }
+}
+
+function goBack(): void {
+  let history: string[] | [] = JSON.parse(localStorage.getItem('navigationHistory') || '[]');
+  //pobiera ostatni adres
+  console.log('history', history);
+  let lastAddress = history[history.length - 1];
+  console.log('history last', lastAddress);
+  if (lastAddress && (lastAddress === "/error" || lastAddress === "/login")) {
+  console.log('usuwam', lastAddress);
+  history=history.slice(-25);
+    history = history.filter(item => item!==lastAddress); // Usuń ostatnią odwiedzoną stronę
+    localStorage.setItem('navigationHistory', JSON.stringify(history));
+  }
+
+  console.log('history2', history[history.length - 1]);
+  router.replace(history[history.length - 1]);
+
+  // if (history.length > 1) {
+  // } else {
+  //   router.replace('/defaultPage'); // Przekieruj, jeśli w historii jest tylko jedna strona
+  // }
+}
+
 </script>
 <template>
-  <!--  <div class="bg-office">-->
   <form
-    class="login-form mb-5 mt-1 mt-md-5"
-    @submit.prevent="authorizationStore.login(username, password)"
+      class="login-form mb-5 mt-1 mt-md-5"
+      @submit.prevent="login()"
   >
-    <h2 class="mb-5 color-orange text-center">Logowanie</h2>
+    <h2 class="mb-5 mt-5 color-yellow text-center">Logowanie</h2>
 
     <!-- ERROR -->
     <div v-if="authorizationStore.loginError">
       <p id="error">Niestety podałeś niewłaściwy login lub hasło.</p>
     </div>
 
-    <!-- LOGIN id="form-group-login"-->
-    <div class="form-group color-orange mb-3">
-      <label for="inputLogin" class="form-label">Login</label>
-      <input
-        type="text"
-        id="inputLogin"
-        class="form-control form-control-lg"
-        placeholder="Nazwa użytkownika"
-        autocomplete="username"
-        required
-        v-model="username"
+    <FloatLabel>
+      <InputText
+          id="username"
+          v-model="username"
+          class="w-full"
+          autocomplete="username"
+          required
       />
-    </div>
+      <label for="username">Login</label>
+    </FloatLabel>
 
     <!-- PASSWORD -->
-    <div class="form-group color-orange">
-      <label for="inputPassword" class="form-label">Hasło</label>
-      <input
-        type="password"
-        id="inputPassword"
-        class="form-control form-control-lg"
-        placeholder="Hasło"
-        autocomplete="current-password"
-        required
-        v-model="password"
+    <FloatLabel class="mt-5">
+      <Password v-model="password"
+                toggleMask
+                required
+                id="password"
+                class="w-full"
+                autocomplete="current-password"
+                :inputStyle="{'width':'100%'}"
+                :feedback="false"
+
       />
-    </div>
+      <label for="password" class="w-full">Hasło</label>
+    </FloatLabel>
+
 
     <!-- BUTTON -->
     <office-button
-      text="zaloguj się"
-      class="btn mt-3 mb-1"
-      style="width: 100%"
-      btn-type="office"
-      type="submit"
-      :disabled="authorizationStore.btnDisabled"
-      :is-busy-icon="authorizationStore.busyIcon"
-      >Zaloguj się
+        text="zaloguj się"
+        class="btn mt-5 mb-1"
+        style="width: 100%"
+        btn-type="office"
+        type="submit"
+        :disabled="authorizationStore.btnDisabled || settingStore.loadingSettings"
+        :loading="authorizationStore.loading || settingStore.loadingSettings"
+    >Zaloguj się
     </office-button>
     <p class="text-right mb-4">
       <router-link class="color-gray link" to="/forgot-password"
-        >Nie pamiętam hasła</router-link
+      >Nie pamiętam hasła
+      </router-link
       >
     </p>
   </form>
@@ -90,7 +128,7 @@ onMounted(() => {
 
 /* mouse over link */
 .link:hover {
-  color: rgb(238, 127, 0);
+  color: rgba(255, 245, 0, .7);
   text-decoration: none;
 }
 

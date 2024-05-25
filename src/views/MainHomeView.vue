@@ -6,21 +6,11 @@ import {useAuthorizationStore} from "../stores/authorization.ts";
 
 const authorizationStore = useAuthorizationStore();
 
-function runFinance() {
-  console.log("START - finance()");
-  if (authorizationStore.hasAccessFinance) {
+function runTasks() {
+  console.log("START - tasks()");
+  if (authorizationStore.hasAccessTasks) {
     router.push({
-      name: "FinanceHome",
-      // params: { idUser: 0, isEdit: "false" },
-    });
-  }
-}
-
-function runLibrary() {
-  console.log("START - library()");
-  if (authorizationStore.hasAccessLibrary) {
-    router.push({
-      name: "LibraryHome",
+      name: "TasksHome",
       // params: { idUser: 0, isEdit: "false" },
     });
   }
@@ -30,24 +20,39 @@ function runLibrary() {
 <template>
   <TheMenu />
   <h1
-    v-if="!authorizationStore.isAuthenticated"
-    class="color-orange flex justify-content-center mt-8"
+    v-if="!authorizationStore.isAuthenticatedOrToken"
+    class="color-yellow flex justify-content-center mt-8"
   >
     Musisz się najpierw zalogować... ;)
   </h1>
-  <div v-else class="flex flex-row justify-content-center gap-2 mt-5">
+  <div v-else class="flex flex-row flex-wrap justify-content-center gap-5 mt-5">
     <AppCard
-      text-content="Kredyty, płatności i zakupy"
-      text-title="Finanse"
-      @clicked="runFinance"
+      text-content="Gazociągi, przyłącza, wewnętrzne"
+      text-title="Zadania"
+      @clicked="runTasks"
+      :disabled="!authorizationStore.hasAccessTasks"
     />
     <AppCard
-      text-content="Książki, audiobooki, ebooki"
-      text-title="Biblioteka"
-      @clicked="runLibrary"
+      text-title="Finanse"
+      text-content="Faktury, oferty"
+    />
+    <AppCard
+        text-title="Pracownicy"
+        text-content="Godziny, wypłaty, pożyczki"
+    />
+    <AppCard
+        text-title="Klienci"
+        text-content="Lista klientów"
+    />
+    <AppCard
+        text-title="Pojazdy"
+        text-content="Faktury, Oferty"
+    />
+    <AppCard
+        text-title="Ustawienia"
+        text-content="Konata, użytkownicy, dostępy"
     />
   </div>
-  <TheFooter />
 </template>
 
 <style scoped></style>

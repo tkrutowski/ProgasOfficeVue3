@@ -1,13 +1,13 @@
 <template>
-  <Card class="custom-card" style="max-width: 20rem">
+  <Card class="custom-card"  >
     <template #header>
-      <h4 class="mb-0 text-center color-orange">
+      <h3 class="mb-0 text-center color-yellow header">
         {{ textTitle }}
-      </h4>
+      </h3>
     </template>
 
     <template #content>
-      <p class="color-orange">{{ textContent }}</p>
+      <p class="text-center color-yellow">{{ textContent }}</p>
     </template>
 
     <template #footer>
@@ -17,6 +17,7 @@
           btn-type="office"
           text="wejście"
           type="button"
+          :btn-disabled="disabled"
           @click="clicked"
         />
       </div>
@@ -39,6 +40,11 @@ defineProps({
     type: String,
     required: true,
   },
+  disabled: {
+    type: Boolean,
+    required: false,
+    default: true
+  },
 });
 function clicked() {
   console.log("clicked");
@@ -52,7 +58,14 @@ function clicked() {
   justify-content: center;
 }
 .custom-card {
+  width: 270px;
   background-color: #1a1a1a; /* Wybierz swój kolor */
-  border: 2px solid #ee7f00;
+  border: 2px solid rgba(255, 245, 0, 1)
+}
+.header{
+  font-weight: bolder;
+  letter-spacing: 1.2px;
+  background-color: rgba(255, 245, 0, .1)
+
 }
 </style>
