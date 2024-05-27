@@ -181,6 +181,7 @@ const coordinators = ref<String[]>([]);
 const customers = ref<String[]>([]);
 onMounted(() => {
   console.log("MOUNTED GasConnectionView")
+  if(designerStore.designersCached.length === 0) designerStore.refreshDesignerCache()
   getVisibleColumns()
   updateDisplayByDesigners()
   updateDisplayByStatus()
@@ -191,7 +192,6 @@ const dataLoading = ref<boolean>(false);
 const dataTableRef = ref();
 
 async function loadData(status: TaskStatus) {
-  console.log("GasConnectionView - loadData")
   dataLoading.value = true;
   const data = await gasConnectionQueryStore.getGasConnectionList(status);
 
@@ -206,7 +206,6 @@ async function loadData(status: TaskStatus) {
 }
 
 async function filterByDesigners(data: GasconnectionQuery[]) {
-  console.log('filterByDesigners: ',selectedDisplayByDesigners.value.value)
   if(selectedDisplayByDesigners.value.value === "MINE") {
     const designerId:number = authenticationStore.getUserDesignerId
     return data.filter(value => value.idDesigner === designerId)
@@ -215,14 +214,12 @@ async function filterByDesigners(data: GasconnectionQuery[]) {
   if(selectedDisplayByDesigners.value.value === "COMPANY") {
     let designerInCompany = await designerStore.getDesignerInCompany({name: "ALL", viewName: ""});
     let designerIds = designerInCompany.map(value => value.id);
-    console.log("designerIds",designerIds)
     return data.filter(value => designerIds.includes(value.idDesigner))
   }
   return data;
 }
 
 const mapdates = (data: GasconnectionQuery[]) => {
-  console.log("MapDates")
   return [...(data || [])].map((item) => {
     item.finishDeadline = changeDate(item.finishDeadline)
     item.contractDate = changeDate(item.contractDate)
@@ -273,7 +270,6 @@ function getVisibleColumns() {
 watch(
     () => settingStore.settings.gasConnectionSettings,
     () => {
-      console.log('WATCH columns');
       getVisibleColumns();
       updateDisplayByStatus()
       updateDisplayByDesigners()
@@ -287,6 +283,7 @@ function getSortOrder() {
 }
 
 //display status
+
 const selectedNode = ref({})
 const nodes = ref([
   {
@@ -318,7 +315,6 @@ const nodes = ref([
   },
 ]);
 function onStatusChange(event: any) {
-  console.log('CHANGED', Object.keys(event)[0])
   loadData(UtilsService.getStatus(Object.keys(event)[0]))
 }
 function updateDisplayByStatus() {
@@ -339,19 +335,18 @@ function updateDisplayByDesigners() {
      selectedDisplayByDesigners.value = find;
 }
 watch(selectedDisplayByDesigners,(newValue, oldValue)=>{
-  console.log('newValue',newValue)
-  console.log('oldValue',oldValue)
-  console.log('nul?',newValue === null)
   if (newValue === null) {
     selectedDisplayByDesigners.value=oldValue
   }
 })
 function displayByDesignersChange(newValue: any){
   if (newValue.value !== null) {
-    loadData(UtilsService.getStatus(selectedNode.value.key))
+    loadData(UtilsService.getStatus(getKey(selectedNode.value)))
   }
 }
-
+function getKey(key:any) {
+    return `${key}`;
+  }
 //settings
 const showSettings = ref(false);
 
@@ -399,13 +394,12 @@ const menuModel = computed(() => {
 
   items.push(
       {separator: true},
-      {label: 'View', icon: 'pi pi-fw pi-search', command: () => console.log('VIEW', selectedGasConnection.value)},
-      {label: 'Delete', icon: 'pi pi-fw pi-times', command: () => console.log('DELETE', selectedGasConnection.value)}
+      {label: 'View???', icon: 'pi pi-fw pi-search', command: () => console.log('VIEW', selectedGasConnection.value)},
+      {label: 'Delete???', icon: 'pi pi-fw pi-times', command: () => console.log('DELETE', selectedGasConnection.value)}
   )
   return items;
 });
 const onRowContextMenu = (event: any) => {
-  console.log('ROW', event)
   selectedGasConnectionIndex.value = event.index;
   contextMenuRef.value.show(event.originalEvent);
 };
@@ -415,10 +409,10 @@ const lockedGasConnection = ref<GasconnectionQuery[]>([]);
 const toggleLock = (data: GasconnectionQuery | undefined, frozen: boolean, index: number | undefined) => {
   if (data) {
     if (frozen) {
-      lockedGasConnection.value = lockedGasConnection.value.filter((c, i) => i !== index);
+      lockedGasConnection.value = lockedGasConnection.value.filter((c, i) => {void c;  return i !== index});
       gasConnections.value.push(data);
     } else {
-      customers.value = customers.value.filter((c, i) => i !== index);
+      customers.value = customers.value.filter((c, i) => {void c;  return i !== index});
       lockedGasConnection.value.push(data);
     }
   }
@@ -432,7 +426,6 @@ const onFilter = (event: any) => {
 
 //row style
 const rowStyle = (data: GasconnectionQuery) => {
-  // console.log('ROW', data);
   if (data.isFinished) {
     return {backgroundColor: settingStore.settings.gasConnectionSettings.colorCompleted};
     // return { backgroundColor: 'bold', fontStyle: 'italic' };
@@ -457,7 +450,7 @@ const rowStyle = (data: GasconnectionQuery) => {
 //cell style
 const cellStyle = (data: GasconnectionQuery, column: string) => {
 
-  // is invoice
+  // is invoiced
   if(column === "contractNo" && data.isInvoice)
   return {
     backgroundColor: settingStore.settings.gasConnectionSettings.colorReceipt,

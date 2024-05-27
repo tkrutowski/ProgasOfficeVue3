@@ -3,9 +3,7 @@ import { ref } from "vue";
 import { useAuthorizationStore} from "../stores/authorization";
 import OfficeButton from "../components/OfficeButton.vue";
 import router from "../router";
-import {useGasConnectionQueryStore} from "@/stores/gasconnectionQuery.ts";
 
-const  storeGasConnectionQuery = useGasConnectionQueryStore();
 const authorizationStore = useAuthorizationStore();
 const items = ref([
   {
