@@ -2,7 +2,7 @@ import axios, {AxiosInstance} from "axios";
 import {useAuthorizationStore} from "@/stores/authorization.ts";
 
 const apiClient: AxiosInstance = axios.create({
-    baseURL: "https://goahead.focikhome.synology.me/api",
+    baseURL: "https://progas.focikhome.synology.me/api",
     // baseURL: "http://localhost:8078/api",
     withCredentials: true,
     headers: {
