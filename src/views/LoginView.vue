@@ -31,24 +31,17 @@ async function login() {
 
 function goBack(): void {
   let history: string[] | [] = JSON.parse(localStorage.getItem('navigationHistory') || '[]');
-  //pobiera ostatni adres
-  console.log('history', history);
   let lastAddress = history[history.length - 1];
-  console.log('history last', lastAddress);
   if (lastAddress && (lastAddress === "/error" || lastAddress === "/login")) {
-  console.log('usuwam', lastAddress);
-  history=history.slice(-25);
-    history = history.filter(item => item!==lastAddress); // Usuń ostatnią odwiedzoną stronę
+    history = history.slice(-25);
+    history = history.filter(item => item !== lastAddress); // Usuń ostatnią odwiedzoną stronę
     localStorage.setItem('navigationHistory', JSON.stringify(history));
   }
 
-  console.log('history2', history[history.length - 1]);
-  router.replace(history[history.length - 1]);
-
-  // if (history.length > 1) {
-  // } else {
-  //   router.replace('/defaultPage'); // Przekieruj, jeśli w historii jest tylko jedna strona
-  // }
+  if (history.length > 0)
+    router.replace(history[history.length - 1]);
+  else
+    router.replace("/");
 }
 
 </script>
