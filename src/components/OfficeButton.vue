@@ -2,7 +2,7 @@
   <Button
     type="button"
     :class="{
-      'office': btnType === 'office',
+      'office-regular': btnType === 'office',
       'office-save': btnType === 'office-save',
     }"
     :disabled="btnDisabled"
@@ -40,7 +40,7 @@ defineProps({
 <style scoped>
 
 
-.office {
+.office-regular {
   background-color: rgba(255, 245, 0, 1);
   color: #332600 !important;
   border-color: rgb(255, 245, 0) !important;
@@ -49,17 +49,17 @@ defineProps({
   font-weight: bold;
 }
 
-.office:hover {
+.office-regular:hover {
   color: white !important;
   background-color: rgba(128, 123, 0) !important;
 }
 
-.office:disabled {
+.office-regular:disabled {
   color: white !important;
   background-color: gray !important;
 }
 
-.office:focus {
+.office-regular:focus {
   outline: none !important;
   box-shadow: none !important;
 }
