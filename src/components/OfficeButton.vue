@@ -2,7 +2,7 @@
   <Button
     type="button"
     :class="{
-      'office-regular': btnType === 'office',
+      'office-regular': btnType === 'office-regular',
       'office-save': btnType === 'office-save',
     }"
     :disabled="btnDisabled"

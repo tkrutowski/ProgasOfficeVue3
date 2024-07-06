@@ -672,7 +672,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
 
     <template #footer>
       <div class="flex flex-row justify-content-end gap-2">
-        <OfficeButton text="Anuluj" btn-type="office" @click="cancel"/>
+        <OfficeButton text="Anuluj" btn-type="office-regular" @click="cancel"/>
         <OfficeButton text="Zapisz" btn-type="office-save" @click="save" :loading="settingStore.savingSettings" :btn-disabled="settingStore.savingSettings"/>
       </div>
     </template>

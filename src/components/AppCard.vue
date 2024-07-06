@@ -14,7 +14,7 @@
       <div class="card-footer">
         <OfficeButton
           class="w-full mb-2"
-          btn-type="office"
+          btn-type="office-regular"
           text="wejście"
           type="button"
           :btn-disabled="disabled"

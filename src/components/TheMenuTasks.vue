@@ -88,7 +88,7 @@ const items = ref([
           <OfficeButton
             size="sm"
             class="my-2 ml-2 my-sm-0"
-            btn-type="office"
+            btn-type="office-regular"
             text="zaloguj się"
           />
         </router-link>
@@ -97,7 +97,7 @@ const items = ref([
         <OfficeButton
           size="sm"
           class="my-2 ml-2 my-sm-0"
-          btn-type="office"
+          btn-type="office-regular"
           text="wyloguj"
           :onclick="authorizationStore.logout"
         />

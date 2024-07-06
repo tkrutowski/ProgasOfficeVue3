@@ -89,7 +89,7 @@ function goBack(): void {
         text="zaloguj się"
         class="btn mt-5 mb-1"
         style="width: 100%"
-        btn-type="office"
+        btn-type="office-regular"
         type="submit"
         :disabled="authorizationStore.btnDisabled || settingStore.loadingSettings"
         :loading="authorizationStore.loading || settingStore.loadingSettings"
