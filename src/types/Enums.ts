@@ -1,8 +1,8 @@
-type ByDesigners = "ALL" | "MINE" | "COMPANY" ;
-type ByDesignersViewName = "Wszystkie" | "Tylko moje" | "Progas" ;
-export interface DisplayByDesignersEnum {
-    name: ByDesigners;
-    viewName: ByDesignersViewName;
+type ByOwnership = "ALL" | "MINE" | "COMPANY" ;
+type ByOwnershipViewName = "Wszystkie" | "Tylko moje" | "Progas" ;
+export interface DisplayByOwnershipEnum {
+    name: ByOwnership;
+    viewName: ByOwnershipViewName;
 }
 
 type status = "ALL" | "ACTIVE" | "INACTIVE" ;

@@ -13,14 +13,14 @@ import PrimeVue from "primevue/config";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 // import "primevue/resources/themes/lara-light-blue/theme.css";
-import "primevue/resources/themes/arya-orange/theme.css";
+// import "primevue/resources/themes/arya-orange/theme.css";
 // import "primevue/resources/themes/lara-light-amber/theme.css";
 // import "primevue/resources/themes/rhea/theme.css";
 // import "bootstrap/dist/css/bootstrap.min.css";
 // import "bootstrap";
 // import "@/assets/css/main.css";
 // import "bootstrap-icons/font/bootstrap-icons.css";
-
+import Aura from '@primevue/themes/aura';
 import ToastService from "primevue/toastservice";
 
 import Button from "primevue/button";
@@ -35,7 +35,7 @@ import ColumnGroup from "primevue/columngroup";
 // import ConfirmationService from 'primevue/confirmationservice';
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
-import DataViewLayoutOptions from "primevue/dataviewlayoutoptions";
+// import DataViewLayoutOptions from "primevue/dataviewlayoutoptions";
 import Dialog from "primevue/dialog";
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
@@ -60,6 +60,7 @@ import Rating from "primevue/rating";
 import RadioButton from "primevue/radiobutton";
 import Row from "primevue/row";
 import SelectButton from "primevue/selectbutton";
+import Select from 'primevue/select';
 import Slider from "primevue/slider";
 import Sidebar from "primevue/sidebar";
 import TabMenu from "primevue/tabmenu";
@@ -90,6 +91,18 @@ pinia.use(({ store }) => {
 });
 
 const app = createApp(App);
+
+app.use(PrimeVue, {
+    // Default theme configuration
+    theme: {
+        preset: Aura,
+        options: {
+            prefix: 'p',
+            darkModeSelector: 'system',
+            cssLayer: false
+        }
+    }
+});
 
 app.use(pinia);
 app.use(router);
@@ -312,7 +325,7 @@ app.component("ColumnGroup", ColumnGroup);
 app.component("ContextMenu", ContextMenu);
 app.component("DataTable", DataTable);
 app.component("DataView", DataView);
-app.component("DataViewLayoutOptions", DataViewLayoutOptions);
+// app.component("DataViewLayoutOptions", DataViewLayoutOptions);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
@@ -339,6 +352,7 @@ app.component("RadioButton", RadioButton);
 app.component("Rating", Rating);
 app.component("Row", Row);
 app.component("SelectButton", SelectButton);
+app.component("Select", Select);
 app.component("Slider", Slider);
 app.component("Sidebar", Sidebar);
 app.component("TabMenu", TabMenu);

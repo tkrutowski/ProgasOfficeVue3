@@ -18,15 +18,21 @@ export interface GasConnectionSettings {
     rowsNumber:number,
     displayStatus:string,
     colorBeforeDeadline: string,
-    daysBefore: number,
-    daysBeforeProjectDeadlineDashboard: number,
-    daysBeforeFinishDeadlineDashboard: number,
+    daysBeforeFinishDeadline: number,
     colorCompleted: string,
     colorOverdue: string,
     colorSubmission: string,
     colorReceipt: string,
     colorFvReady: string,
-    displayByDesigner: string
+    displayByOwnership: string
+    //design
+    gasConnectionColumnsDesign: ColumnView[],
+    daysBeforeProjectDeadline: number,
+    sortColumnDesign:string | undefined,
+    sortDirectionDesign:boolean,
+    rowsNumberDesign:number,
+    displayStatusDesign:string,
+    displayByOwnershipDesign: string
 }
 
 export interface AppSettings {

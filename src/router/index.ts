@@ -7,7 +7,8 @@ import RefreshComponent from "@/components/RefreshComponent.vue";
 
 //TASKS
 import TasksHomeView from "../views/tasks/TasksHomeView.vue";
-import GasConnectionsView from "../views/tasks/GasConnectionsView.vue";
+import GasConnectionsBuildView from "../views/tasks/GasConnectionsBuildView.vue";
+import GasConnectionsDesignView from "@/views/tasks/GasConnectionsDesignView.vue";
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -40,9 +41,14 @@ const routes: Array<RouteRecordRaw> = [
         component: TasksHomeView,
     },
     {
-        path: "/tasks/gasconnection/all",
-        name: "GasConnections",
-        component: GasConnectionsView,
+        path: "/tasks/gas-connection-build/all",
+        name: "GasConnectionsBuild",
+        component: GasConnectionsBuildView,
+    },
+    {
+        path: "/tasks/gas-connection-design/all",
+        name: "GasConnectionsDesign",
+        component: GasConnectionsDesignView,
     },
 ];
 

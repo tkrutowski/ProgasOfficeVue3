@@ -43,6 +43,7 @@ const getOverdue = computed<number[]>(() => {
   ids.forEach(id => {
     list.push(gasConnections.value
         .filter(value => value.idDesigner === id)
+        .filter(value => value.stage < 5)
         .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
         .length)
   })
@@ -56,6 +57,7 @@ const getDeadline = computed<number[]>(() => {
   ids.forEach(id => {
     list.push(gasConnections.value
         .filter(value => value.idDesigner === id)
+        .filter(value => value.stage < 5)
         .filter(value => moment(value.projectDeadline).diff(moment(), 'days') <= daysBefore)
         .filter(value => moment(value.projectDeadline).diff(moment(), 'days') > 0)
         .length)
@@ -71,15 +73,18 @@ const getRegular = computed<number[]>(() => {
   ids.forEach(id => {
     let overdue = gasConnections.value
         .filter(value => value.idDesigner === id)
+        .filter(value => value.stage < 5)
         .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
         .length
     let deadline = gasConnections.value
         .filter(value => value.idDesigner === id)
+        .filter(value => value.stage < 5)
         .filter(value => moment(value.projectDeadline).diff(moment(), 'days') <= daysBefore)
         .filter(value => moment(value.projectDeadline).diff(moment(), 'days') > 0)
         .length
     let all: number = gasConnections.value
         .filter(value => value.idDesigner === id)
+        .filter(value => value.stage < 5)
         .length
     list.push(all - (deadline + overdue))
   })

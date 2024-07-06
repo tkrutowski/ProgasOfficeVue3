@@ -14,7 +14,7 @@ const gasConnectionCached = ref<GasconnectionQuery[]>([])
 onMounted(async () => {
   console.log('MOUNTED TaskHomeView')
   gasConnectionCached.value = await gasConnectionQueryStore.getGasConnectionCached();
-  if(designerStore.designersCached.length === 0) designerStore.refreshDesignerCache()
+  if (designerStore.designersCached.length === 0) designerStore.refreshDesignerCache()
 })
 
 
@@ -22,11 +22,9 @@ onMounted(async () => {
 
 <template>
   <TheMenuTasks/>
-  <h1 class="color-yellow flex justify-content-center mt-3">
-    TABLICA
-  </h1>
-<DesignerDashboard/>
-  <ConstructorDashboard class="mt-5" />
+  <h2 class="color-yellow flex justify-content-center mt-3">TABLICA</h2>
+  <DesignerDashboard/>
+  <ConstructorDashboard class="mt-5"/>
 </template>
 
 <style scoped></style>

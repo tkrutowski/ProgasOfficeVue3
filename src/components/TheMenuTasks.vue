@@ -45,54 +45,33 @@ const items = ref([
         },
       },
       {
-        label: "Lista przyłączy",
+        label: "Lista przyłączy - projekt",
         icon: "pi pi-fw pi-list",
         // to: { name: "Invoices" },
         command: () => {
-          if(window.location.href.includes(router.resolve({name: "GasConnections"}).href)) {
-            const redirect = JSON.stringify({ name: 'GasConnections' });
+          if(window.location.href.includes(router.resolve({name: "GasConnectionsDesign"}).href)) {
+            const redirect = JSON.stringify({ name: 'GasConnectionsDesign' });
             router.push({ path: '/refresh', query: { redirect: redirect } });
           }else {
-            router.push({ name: "GasConnections" });
+            router.push({ name: "GasConnectionsDesign" });
+          }
+        },
+      },
+      {
+        label: "Lista przyłączy - budowa",
+        icon: "pi pi-fw pi-list",
+        // to: { name: "Invoices" },
+        command: () => {
+          if(window.location.href.includes(router.resolve({name: "GasConnectionsBuild"}).href)) {
+            const redirect = JSON.stringify({ name: 'GasConnectionsBuild' });
+            router.push({ path: '/refresh', query: { redirect: redirect } });
+          }else {
+            router.push({ name: "GasConnectionsBuild" });
           }
         },
       },
     ],
   },
-  // {
-  //   label: "Moja półka",
-  //   icon: "pi pi-fw pi-euro",
-  //   // disabled: !authorizationStore.hasAccessFinance,
-  //   items: [
-  //     {
-  //       label: "Aktualnie czytane",
-  //       icon: "pi pi-fw pi-file",
-  //       // to: { name: "Invoice", params: { isEdit: "false", invoiceId: 0 } },
-  //       command: () => {
-  //         router.push({
-  //           name: "UserBooksReadNow",
-  //           // params: { isEdit: "false", feeId: 0 },
-  //         });
-  //       },
-  //     },
-  //     {
-  //       label: "Poczekalnia",
-  //       icon: "pi pi-fw pi-list",
-  //       // to: { name: "Invoices" },
-  //       command: () => {
-  //         router.push({ name: "UserBooksToRead" });
-  //       },
-  //     },
-  //     {
-  //       label: "Przeczytane",
-  //       icon: "pi pi-fw pi-list",
-  //       // to: { name: "Invoices" },
-  //       command: () => {
-  //         router.push({ name: "UserBooksRead" });
-  //       },
-  //     },
-  //   ],
-  // },
 ]);
 </script>
 
@@ -123,5 +102,6 @@ const items = ref([
       </div>
     </template>
   </Menubar>
+
 </template>
 <style scoped></style>

@@ -31,6 +31,7 @@ const getDesignerName = computed<string>(() => {
 const getOverdueDesigner = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
+      .filter(value => value.stage < 5)
       .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
       .length
 })
@@ -38,6 +39,7 @@ const getDeadlineDesigner = computed(() => {
   const daysBefore = settingStore.settings.gasConnectionSettings.daysBefore;
   return gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
+      .filter(value => value.stage < 5)
       .filter(value => moment(value.projectDeadline).diff(moment(), 'days') <= daysBefore)
       .filter(value => moment(value.projectDeadline).diff(moment(), 'days') > 0)
       .length;
@@ -45,6 +47,7 @@ const getDeadlineDesigner = computed(() => {
 const getRegularDesigner = computed<number>(() => {
   let all: number = gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
+      .filter(value => value.stage < 5)
       .length
   return all - (getDeadlineDesigner.value + getOverdueDesigner.value)
 })
@@ -58,13 +61,15 @@ const getCompanyDesignerIds = computed<number[]>(() => {
 const getOverdueCompany = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => getCompanyDesignerIds.value.includes(value.idDesigner))
+      .filter(value => value.stage < 5)
       .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
       .length
 })
 const getDeadlineCompany = computed<number>(() => {
-  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadlineDashboard;
+  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
   return gasConnectionCached.value
       .filter(value => getCompanyDesignerIds.value.includes(value.idDesigner))
+      .filter(value => value.stage < 5)
       .filter(value => moment(value.projectDeadline).diff(moment(), 'days') <= daysBefore)
       .filter(value => moment(value.projectDeadline).diff(moment(), 'days') > 0)
       .length
@@ -72,14 +77,16 @@ const getDeadlineCompany = computed<number>(() => {
 const getRegularCompany = computed<number>(() => {
   let all: number = gasConnectionCached.value
       .filter(value => getCompanyDesignerIds.value.includes(value.idDesigner))
+      .filter(value => value.stage < 5)
       .length
   return all - (getDeadlineCompany.value + getOverdueCompany.value)
 })
 
 const getForDesignerTable = computed(() => {
-  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadlineDashboard;
+  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
   return gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
+      .filter(value => value.stage < 5)
       .filter(value => moment(value.projectDeadline).diff(moment(), 'days') <= daysBefore)
       .sort((a, b) => moment(a.projectDeadline).diff(moment(b.projectDeadline)))
 })
@@ -127,6 +134,7 @@ const getForDesignerChart = computed(() => {
         <TableForDesigners
             id="tableForDesigners"
             :gas-connection-list="getForDesignerTable"
+            :days-before=" settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline"
         />
       </div>
 

@@ -9,6 +9,11 @@ const props = defineProps({
     required: true,
     default: []
   },
+  daysBefore:{
+    type: Number,
+    required: true,
+    default: ""
+  }
 })
 
 const list =ref<GasconnectionQuery[]>(props.gasConnectionList)
@@ -25,7 +30,7 @@ watch(
 <template>
   <Card class="card-border  ">
     <template #title>
-      <span class="card-header">Lista przyłączy przeterminowanych lub ze zbliżającym się terminem projektu.</span>
+      <span class="card-header">Lista przyłączy przeterminowanych lub ze zbliżającym się terminem projektu (mniej niż {{props.daysBefore}} dni).</span>
     </template>
     <template #content>
     <DataTable :value="list" tableStyle="min-width: 50rem" removableSort showGridlines scrollable scrollHeight="400px">

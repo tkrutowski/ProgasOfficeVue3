@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from 'vue';
-import {FilterMatchMode, FilterOperator} from 'primevue/api';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import {useGasConnectionQueryStore} from "@/stores/gasconnectionQuery.ts";
 import {useSettingStore} from "@/stores/setting.ts";
 import {useAuthorizationStore} from "@/stores/authorization.ts";
@@ -193,7 +193,14 @@ const dataTableRef = ref();
 
 async function loadData(status: TaskStatus) {
   dataLoading.value = true;
-  const data = await gasConnectionQueryStore.getGasConnectionList(status);
+  let data = (await gasConnectionQueryStore.getGasConnectionList(status))
+      .filter(value => value.stage < 5);
+
+
+
+  if(status.name === "NOT_FINISHED") {
+      data = data.filter(value => value.stage < 5);
+  }
 
   if (data) {
     let filteredData:GasconnectionQuery[] = await filterByDesigners(data)
@@ -284,42 +291,24 @@ function getSortOrder() {
 
 //display status
 
-const selectedNode = ref({})
-const nodes = ref([
+const selectedDisplay = ref<TaskStatus>({name: 'NOT_FINISHED',
+  viewName: 'Niezrealizowane',})
+const displayOption = ref<TaskStatus[]>([
   {
-    key: 'ALL',
-    label: 'Wszystkie',
+    name: 'ALL',
+    viewName: 'Wszystkie',
   },
   {
-    key: 'FINISHED',
-    label: 'Zrealizowane',
-  },
-  {
-    key: 'NOT_FINISHED',
-    label: 'Niezrealizowane',
-    children: [
-      {
-        key: 'NOT_FINISHED_TECH',
-        label: 'Odbiór techniczny',
-      },
-      {
-        key: 'NOT_FINISHED_END',
-        label: 'Odbiór końcowy',
-      }
-    ]
-  },
-  {
-    key: 'OVER_DUE',
-    label: 'Przeterminowane',
-
+    name: 'NOT_FINISHED',
+    viewName: 'Niezrealizowane',
   },
 ]);
-function onStatusChange(event: any) {
-  loadData(UtilsService.getStatus(Object.keys(event)[0]))
+function onStatusChange() {
+  loadData(selectedDisplay.value)
 }
 function updateDisplayByStatus() {
-  let displayStatus = settingStore.settings.gasConnectionSettings.displayStatus;
-  selectedNode.value = {[displayStatus]: true}
+  let status  = settingStore.settings.gasConnectionSettings.displayStatus;
+  selectedDisplay.value = UtilsService.getStatus(status)
 }
 // designer
 const displayByDesigners = ref([
@@ -329,7 +318,7 @@ const displayByDesigners = ref([
 ]);
 const selectedDisplayByDesigners = ref(displayByDesigners.value[0]);
 function updateDisplayByDesigners() {
-  let status = settingStore.settings.gasConnectionSettings.displayByDesigner;
+  let status = settingStore.settings.gasConnectionSettings.displayByOwnership;
    let find = displayByDesigners.value.find(item => item.value === status);
    if (find)
      selectedDisplayByDesigners.value = find;
@@ -341,12 +330,13 @@ watch(selectedDisplayByDesigners,(newValue, oldValue)=>{
 })
 function displayByDesignersChange(newValue: any){
   if (newValue.value !== null) {
-    loadData(UtilsService.getStatus(getKey(selectedNode.value)))
+    loadData(UtilsService.getStatus(getKey(selectedDisplay.value)))
   }
 }
 function getKey(key:any) {
     return `${key}`;
   }
+
 //settings
 const showSettings = ref(false);
 
@@ -436,12 +426,12 @@ const rowStyle = (data: GasconnectionQuery) => {
 
 
     //overdue
-    if (moment().diff(data.finishDeadline, 'days') > 0)
+    if (moment().diff(data.projectDeadline, 'days') > 0)
       return {backgroundColor: settingStore.settings.gasConnectionSettings.colorOverdue};
 
     //before deadline
-    const daysBefore = settingStore.settings.gasConnectionSettings.daysBefore;
-    const calculatedDays = moment(data.finishDeadline).diff(moment(), 'days')
+    const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
+    const calculatedDays = moment(data.projectDeadline).diff(moment(), 'days')
     if (calculatedDays <= daysBefore && calculatedDays > 0) {
       return {backgroundColor: settingStore.settings.gasConnectionSettings.colorBeforeDeadline};
     }
@@ -474,8 +464,9 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
 
 <template>
   <TheMenuTasks/>
+  <h2 class="color-yellow flex justify-content-center mt-3">Lista przyłączy - projekt</h2>
   <GasConnectionSettingDialog v-model:visible="showSettings" @save="saveSettings" @cancel="showSettings=false"/>
-  <div class="card mt-5">
+  <div class="card mt-2">
     <ContextMenu ref="contextMenuRef" :model="menuModel" @hide="selectedGasConnection = undefined"/>
     <DataTable ref="dataTableRef" v-model:filters="filters"
                :value="gasConnections"
@@ -503,9 +494,10 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
         <div class="flex justify-content-between ">
           <Button type="button" icon="pi pi-filter-slash" label="Wyczyść" outlined @click="clearFilter()"/>
           <div class="flex flex-row gap-2">
-            <TreeSelect v-model="selectedNode"
+            <Select v-model="selectedDisplay"
                         @change="onStatusChange"
-                        :options="nodes"
+                        :options="displayOption"
+                    optionLabel="viewName"
                         placeholder="Wybierz status"
                         class="md:w-20rem w-full"/>
           </div>

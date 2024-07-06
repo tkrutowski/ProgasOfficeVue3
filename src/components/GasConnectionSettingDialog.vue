@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import {useSettingStore} from "@/stores/setting.ts";
+import {useAuthorizationStore} from "@/stores/authorization.ts";
 import OfficeButton from "@/components/OfficeButton.vue";
 import {computed, onMounted, ref, watch} from "vue";
 import {ColumnView, GasConnectionSettings} from "@/types/Settings.ts";
 import {TaskStatus} from "@/types/TaskStatus.ts";
-import {DisplayByDesignersEnum} from "@/types/Enums.ts";
+import {DisplayByOwnershipEnum} from "@/types/Enums.ts";
 import {UtilsService} from "@/service/UtilsService.ts";
+import Tabs from 'primevue/tabs';
+import TabList from 'primevue/tablist';
+import Tab from 'primevue/tab';
+import TabPanels from 'primevue/tabpanels';
+import TabPanel from 'primevue/tabpanel';
 
 const settingStore = useSettingStore();
+const authorizationStore = useAuthorizationStore();
 type SortDirection = {
   name: string;
   code: boolean;
@@ -37,7 +44,6 @@ const getSettings = () => {
   setSortDirection(settingStore.settings.gasConnectionSettings.sortDirection);
   selectedPaginator.value=settingStore.settings.gasConnectionSettings.rowsNumber;
   selectedLockedColumns.value = [...settingStore.getGasConnectionLockedColumns];
-  daysBefore.value = settingStore.settings.gasConnectionSettings.daysBefore;
   colorBefore.value = parseColor(settingStore.settings.gasConnectionSettings.colorBeforeDeadline);
   transparencyBefore.value = colorBefore.value ? colorBefore.value.a * 100 : 1;
   colorOverdue.value = parseColor(settingStore.settings.gasConnectionSettings.colorOverdue);
@@ -50,8 +56,20 @@ const getSettings = () => {
   transparencyReceipt.value = colorReceipt.value ? colorReceipt.value.a * 100 : 1;
   colorFvReady.value = parseColor(settingStore.settings.gasConnectionSettings.colorFvReady);
   transparencyFvReady.value = colorFvReady.value ? colorFvReady.value.a * 100 : 1;
-  selectedDesignerEnum.value = getDesignerEnum(settingStore.settings.gasConnectionSettings.displayByDesigner);
+  selectedOwnershipEnum.value = getOwnershipEnum(settingStore.settings.gasConnectionSettings.displayByOwnership);
   selectedStatus.value = UtilsService.getStatus(settingStore.settings.gasConnectionSettings.displayStatus)
+  daysBeforeFinishDeadline.value = settingStore.settings.gasConnectionSettings.daysBeforeFinishDeadline;
+
+  //design
+  columnsDesign.value = [[...settingStore.getGasConnectionInvisibleColumnsDesign], [...settingStore.getGasConnectionVisibleColumnsDesign]];
+  sortColumnsDesign.value = [...settingStore.getGasConnectionVisibleColumnsDesign];
+  selectedSortColumnDesign.value = settingStore.getGasConnectionVisibleColumns.find(column => column.field === settingStore.settings.gasConnectionSettings.sortColumn);
+  setSortDirectionDesign(settingStore.settings.gasConnectionSettings.sortDirectionDesign);
+  selectedPaginatorDesign.value=settingStore.settings.gasConnectionSettings.rowsNumberDesign;
+  selectedLockedColumnsDesign.value = [...settingStore.getGasConnectionLockedColumnsDesign];
+  selectedOwnershipEnumDesign.value = getOwnershipEnum(settingStore.settings.gasConnectionSettings.displayByOwnershipDesign);
+  selectedStatusDesign.value = UtilsService.getStatus(settingStore.settings.gasConnectionSettings.displayStatusDesign);
+  daysBeforeProjectDeadline.value = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
 }
 
 //columns
@@ -135,14 +153,14 @@ const statuses = ref<TaskStatus[]>([
   {name: 'NOT_FINISHED_END', viewName: "Odbiór końcowy"},
 ]);
 
-//designer
-const selectedDesignerEnum = ref<DisplayByDesignersEnum>({name: "MINE", viewName: "Tylko moje"})
-const designerOptions = ref<DisplayByDesignersEnum[]>([
+//ownership
+const selectedOwnershipEnum = ref<DisplayByOwnershipEnum>({name: "MINE", viewName: "Tylko moje"})
+const ownershipOptions = ref<DisplayByOwnershipEnum[]>([
   {name: "MINE", viewName: "Tylko moje"},
   {name: "COMPANY", viewName: "Progas"},
   {name: "ALL", viewName: "Wszystkie"},
 ])
-function getDesignerEnum(name: string): DisplayByDesignersEnum {
+function getOwnershipEnum(name: string): DisplayByOwnershipEnum {
   switch (name) {
     case 'ALL':
       return {name: 'ALL', viewName: "Wszystkie"}
@@ -160,6 +178,7 @@ const cancel = () => {
 };
 const save = () => {
   sortVisibleColumnsByIndex()
+  sortVisibleColumnsByIndexDesign()
   let settings: GasConnectionSettings = {
     sortColumn: selectedSortColumn.value?.field,
     sortDirection: selectedSortDirection.value.code,
@@ -172,12 +191,18 @@ const save = () => {
     colorSubmission: getColorSubmission.value,
     colorReceipt: getColorReceipt.value,
     colorFvReady: getColorFvReady.value,
-    daysBefore: daysBefore.value,
-    displayByDesigner: selectedDesignerEnum.value.name,
-    daysBeforeFinishDeadlineDashboard: daysBeforeFinishDeadlineDashboard.value,
-    daysBeforeProjectDeadlineDashboard: daysBeforeProjectDeadlineDashboard.value
+    displayByOwnership: selectedOwnershipEnum.value.name,
+    daysBeforeFinishDeadline: daysBeforeFinishDeadline.value,
+    daysBeforeProjectDeadline: daysBeforeProjectDeadline.value,
+    gasConnectionColumnsDesign: columnsDesign.value?.flat(),
+    displayByOwnershipDesign: selectedOwnershipEnumDesign.value.viewName,
+    displayStatusDesign: selectedStatusDesign.value.name,
+    rowsNumberDesign: selectedPaginatorDesign.value,
+    sortColumnDesign: selectedSortColumnDesign.value?.field,
+    sortDirectionDesign: selectedSortDirectionDesign.value.code,
   }
   updateLockedColumns(settings.gasConnectionColumns)
+  updateLockedColumnsDesign(settings.gasConnectionColumnsDesign)
   emit("save", settings);
 };
 
@@ -188,8 +213,7 @@ interface colorRgba {
   b: number,
   a: number
 }
-
-const daysBefore = ref<number>(45)
+const daysBeforeFinishDeadline = ref<number>(45)
 const transparencyBefore = ref<number>(1)
 const colorBefore = ref<colorRgba | null>(null);
 const getColorBefore = computed(() => {
@@ -239,9 +263,87 @@ function parseColor(rgbaString: string): colorRgba | null {
   }
 }
 
-//Dashboard
-const daysBeforeProjectDeadlineDashboard = ref<number>(45)
-const daysBeforeFinishDeadlineDashboard = ref<number>(45)
+
+//
+//------------------------------------------BUILD------------------------------------------------------
+//
+
+//columns
+const columnsDesign = ref<ColumnView[][]>([[]]);
+
+function moveToVisibleDesign(event: any) {
+  event.items.forEach((item: ColumnView) => {
+    item.visible = true
+    sortColumnsDesign.value.push({...item})
+  })
+
+}
+
+function moveToInvisibleDesign(event: any) {
+  event.items.forEach((item: ColumnView) => {
+    item.visible = false
+    const index = sortColumnsDesign.value.findIndex(col => col.field === item.field);
+    if (index !== -1) {
+      sortColumnsDesign.value.splice(index, 1);
+    }
+    //remove from LockedColumns
+    if (selectedLockedColumnsDesign.value) {
+      const indexLock = selectedLockedColumnsDesign.value.findIndex(col => col.field === item.field);
+      if (indexLock !== -1) {
+        selectedLockedColumnsDesign.value.splice(indexLock, 1);
+      }
+    }
+  })
+}
+
+function sortVisibleColumnsByIndexDesign() {
+  columnsDesign.value[1].forEach((col, index) => {
+    col.sortIndex = index;
+  });
+}
+
+//sort
+const selectedSortColumnDesign = ref<ColumnView>();
+const selectedSortDirectionDesign = ref<SortDirection>({name: 'rosnąco', code: false});
+const sortColumnsDesign = ref<ColumnView[]>(settingStore.getGasConnectionVisibleColumnsDesign);
+const filteredColumnsDesign = ref<ColumnView[]>();
+const searchColumnDesign = (event: { query: string }) => {
+  filteredColumnsDesign.value = sortColumnsDesign.value.filter((col) => {
+    return col.header.toLowerCase().includes(event.query.toLowerCase());
+  });
+};
+
+function setSortDirectionDesign(value: boolean) {
+  if (value)
+    selectedSortDirectionDesign.value = {name: 'rosnąco', code: true}
+  else
+    selectedSortDirectionDesign.value = {name: 'malejąco', code: false}
+}
+
+//locked columns
+const selectedLockedColumnsDesign = ref<ColumnView[]>();
+
+function updateLockedColumnsDesign(columns: ColumnView[]) {
+  columns.forEach((column: ColumnView) => {
+    column.frozen = !!selectedLockedColumnsDesign.value?.includes(column);
+  })
+}
+
+//paginator
+const selectedPaginatorDesign = ref<number>(10)
+// const paginatorListDesign = ref<number[]>([10, 20, 30, 50, 75, 100])
+
+//status
+const selectedStatusDesign = ref<TaskStatus>({name: "NOT_FINISHED", viewName: "Niezrealizowane"})
+const statusesDesign = ref<TaskStatus[]>([
+  {name: 'ALL', viewName: "Wszystkie"},
+  {name: 'NOT_FINISHED', viewName: "Niezrealizowane"},
+]);
+
+//ownership
+const selectedOwnershipEnumDesign = ref<DisplayByOwnershipEnum>({name: "MINE", viewName: "Tylko moje"})
+const daysBeforeProjectDeadline = ref<number>(40)
+
 </script>
 
 <template>
@@ -251,167 +353,322 @@ const daysBeforeFinishDeadlineDashboard = ref<number>(45)
         Ustawienia przyłącza
       </h2>
     </template>
-    <Panel header="Wybierz kolumny widoczne w tabeli">
-      <div class="card">
-        <PickList v-model="columns" listStyle="height:342px" dataKey="field" breakpoint="1400px"
-                  @moveToTarget="moveToVisible"
-                  @move-to-source="moveToInvisible"
-                  @move-all-to-source="moveToInvisible"
-                  @move-all-to-target="moveToVisible"
-                  :show-source-controls=false
-        >
-          <template #sourceheader> Dostępne</template>
-          <template #targetheader> Wybrane</template>
-          <template #item="slotProps">
-            <span class="">{{ slotProps.item.header }}</span>
-          </template>
-        </PickList>
-      </div>
-    </Panel>
+    <div class="card">
+      <Tabs value="0">
+        <TabList>
+          <Tab value="0" v-if="authorizationStore.isEmployee">Budowanie</Tab>
+          <Tab value="1" v-if="authorizationStore.isDesigner">Projektowanie</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel value="0" >
+            <Panel header="Wybierz kolumny widoczne w tabeli">
+              <div class="card">
+                <PickList v-model="columns" listStyle="height:342px" dataKey="field" breakpoint="1400px"
+                          @moveToTarget="moveToVisible"
+                          @move-to-source="moveToInvisible"
+                          @move-all-to-source="moveToInvisible"
+                          @move-all-to-target="moveToVisible"
+                          :show-source-controls=false
+                >
+                  <template #sourceheader> Dostępne</template>
+                  <template #targetheader> Wybrane</template>
+                  <template #item="slotProps">
+                    <span class="">{{ slotProps.item.header }}</span>
+                  </template>
+                </PickList>
+              </div>
+            </Panel>
 
-    <div class="flex">
+              <!--SORT  DISPLAY-->
+            <div class="flex flex-row  gap-3">
+              <!--SORT-->
+              <Panel header="Wybierz sposób sortowania" class="mt-5">
+                <div class="flex flex-row  gap-3 p-fluid">
+                  <div>
+                    <label class="" for="sort-column">Wybierz kolumnę:</label>
+                    <AutoComplete id="sort-column" v-model="selectedSortColumn" :suggestions="filteredColumns"
+                                  @complete="searchColumn" dropdown optionLabel="header" class="w-full md:w-13rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="sort-order">Wybierz kierunek:</label>
+                    <Dropdown id="sort-order" v-model="selectedSortDirection" :options="sortDirections" optionLabel="name"
+                              class="w-full md:w-13rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="locked">Wybierz zablokowane kolumny:</label>
+                    <MultiSelect id="locked" v-model="selectedLockedColumns" :options="sortColumns" optionLabel="header"
+                                 placeholder="Wybierz..."
+                                 :maxSelectedLabels="3"
+                                 class="w-full md:w-16rem"/>
+                  </div>
+                </div>
+              </Panel>
 
-      <!--SORT-->
-      <Panel header="Wybierz sposób sortowania" class="mt-5 col-7">
-        <div class="flex flex-row  gap-3 p-fluid">
-          <div>
-            <label class="" for="sort-column">Wybierz kolumnę:</label>
-            <AutoComplete id="sort-column" v-model="selectedSortColumn" :suggestions="filteredColumns"
-                          @complete="searchColumn" dropdown optionLabel="header" class="w-full md:w-14rem"/>
-          </div>
-          <div>
-            <label class="" for="sort-order">Wybierz kierunek:</label>
-            <Dropdown id="sort-order" v-model="selectedSortDirection" :options="sortDirections" optionLabel="name"
-                      class="w-full md:w-14rem"/>
-          </div>
-          <div>
-            <label class="" for="locked">Wybierz zablokowane kolumny:</label>
-            <MultiSelect id="locked" v-model="selectedLockedColumns" :options="sortColumns" optionLabel="header"
-                         placeholder="Wybierz..."
-                         :maxSelectedLabels="3"
-                         class="w-full md:w-16rem"/>
-          </div>
-        </div>
-      </Panel>
+              <!--          DISPLAY            -->
+              <Panel header="Wybierz sposób wyświetlania" class="mt-5 ">
+                <div class="flex flex-row  gap-3 p-fluid">
+                  <div>
+                    <label class="" for="display-status">Status:</label>
+                    <Dropdown id="display-status" v-model="selectedStatus" :options="statuses" optionLabel="viewName"
+                              class="w-full md:w-12rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="display-rows">Ilość wierszy:</label>
+                    <Dropdown id="display-rows" v-model="selectedPaginator" :options="paginatorList"
+                              class="w-full md:w-9rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="display-designers">Własność:</label>
+                    <Dropdown id="display-ownership" v-model="selectedOwnershipEnum" :options="ownershipOptions"
+                              option-label="viewName"
+                              class="w-full md:w-9rem"/>
+                  </div>
+                </div>
+              </Panel>
+            </div>
 
-      <!--          DISPLAY            -->
-      <Panel header="Wybierz sposób wyświetlania" class="mt-5 col-5">
-        <div class="flex flex-row  gap-3 p-fluid">
-          <div>
-            <label class="" for="display-status">Status:</label>
-            <Dropdown id="display-status" v-model="selectedStatus" :options="statuses" optionLabel="viewName"
-                      class="w-full md:w-12rem"/>
-          </div>
-          <div>
-            <label class="" for="display-rows">Ilość wierszy:</label>
-            <Dropdown id="display-rows" v-model="selectedPaginator" :options="paginatorList"
-                      class="w-full md:w-9rem"/>
-          </div>
-          <div>
-            <label class="" for="display-designers">Projektant:</label>
-            <Dropdown id="display-designers" v-model="selectedDesignerEnum" :options="designerOptions"
-                      option-label="viewName"
-                      class="w-full md:w-9rem"/>
-          </div>
-        </div>
-      </Panel>
+              <!--COLOR-->
+            <div class="flex">
+
+              <Panel header="Wybierz kolory" class="mt-5 w-full">
+                <div class="flex flex-row gap-3 p-fluid">
+                  <!-- DEADLINE -->
+                  <div class="w-full">
+                    <label class="" for="colorBefore">Dni do terminu (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb"/>
+                      <Slider v-model="transparencyBefore" class="w-full mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorBefore}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                    <InputNumber class="w-full mt-2" v-model="daysBeforeFinishDeadline" inputId="daysBefore" mode="decimal" showButtons
+                                 :min="0" :max="100"/>
+
+                  </div>
+
+                  <!-- OVERDUE -->
+                  <div class="w-full">
+                    <label class="" for="colorOverdue">Przeterminowane (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb"/>
+                      <Slider v-model="transparencyOverdue" class="w-full  mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorOverdue}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+
+                  </div>
+
+                  <!-- COMPLETED -->
+                  <div class="w-full">
+                    <label class="" for="colorCompleted">Zakończone (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" />
+                      <Slider v-model="transparencyCompleted" class="w-full mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorCompleted}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+
+                  </div>
+
+                  <!-- SUBMISSION -->
+                  <div class="w-full">
+                    <label class="" for="colorSubmission">Złożenie:</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb"/>
+                      <Slider v-model="transparencySubmission" class="w-full mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorSubmission}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                  </div>
+
+                  <!-- RECEIPT  -->
+                  <div class="w-full">
+                    <label class="" for="colorReceipt">Otrzymanie i inne:</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb"/>
+                      <Slider v-model="transparencyReceipt" class="w-full  mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorReceipt}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                  </div>
+
+                  <!-- FV_READY  -->
+                  <div class="w-full">
+                    <label class="" for="colorFvReady">Gotowe do faktury:</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorFvReady" v-model="colorFvReady" format="rgb"/>
+                      <Slider v-model="transparencyFvReady" class="w-full  mt-1  ml-3"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorFvReady}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                  </div>
+                </div>
+              </Panel>
+            </div>
+
+          </TabPanel>
+          <TabPanel value="1">
+            <Panel header="Wybierz kolumny widoczne w tabeli">
+              <div class="card">
+                <PickList v-model="columnsDesign" listStyle="height:342px" dataKey="field" breakpoint="1400px"
+                          @moveToTarget="moveToVisibleDesign"
+                          @move-to-source="moveToInvisibleDesign"
+                          @move-all-to-source="moveToInvisibleDesign"
+                          @move-all-to-target="moveToVisibleDesign"
+                          :show-source-controls=false
+                >
+                  <template #sourceheader> Dostępne</template>
+                  <template #targetheader> Wybrane</template>
+                  <template #item="slotProps">
+                    <span class="">{{ slotProps.item.header }}</span>
+                  </template>
+                </PickList>
+              </div>
+            </Panel>
+
+            <!--SORT  DISPLAY-->
+            <div class="flex flex-row  gap-3">
+              <!--SORT-->
+              <Panel header="Wybierz sposób sortowania" class="mt-5">
+                <div class="flex flex-row  gap-3 p-fluid">
+                  <div>
+                    <label class="" for="sort-column">Wybierz kolumnę:</label>
+                    <AutoComplete id="sort-column" v-model="selectedSortColumnDesign" :suggestions="filteredColumnsDesign"
+                                  @complete="searchColumnDesign" dropdown optionLabel="header" class="w-full md:w-13rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="sort-order">Wybierz kierunek:</label>
+                    <Dropdown id="sort-order" v-model="selectedSortDirectionDesign" :options="sortDirections" optionLabel="name"
+                              class="w-full md:w-13rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="locked">Wybierz zablokowane kolumny:</label>
+                    <MultiSelect id="locked" v-model="selectedLockedColumnsDesign" :options="sortColumnsDesign" optionLabel="header"
+                                 placeholder="Wybierz..."
+                                 :maxSelectedLabels="3"
+                                 class="w-full md:w-16rem"/>
+                  </div>
+                </div>
+              </Panel>
+
+              <!--          DISPLAY            -->
+              <Panel header="Wybierz sposób wyświetlania" class="mt-5 ">
+                <div class="flex flex-row  gap-3 p-fluid">
+                  <div>
+                    <label class="" for="display-status">Status:</label>
+                    <Dropdown id="display-status" v-model="selectedStatusDesign" :options="statusesDesign" optionLabel="viewName"
+                              class="w-full md:w-12rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="display-rows">Ilość wierszy:</label>
+                    <Dropdown id="display-rows" v-model="selectedPaginatorDesign" :options="paginatorList"
+                              class="w-full md:w-9rem"/>
+                  </div>
+                  <div>
+                    <label class="" for="display-designers">Własność:</label>
+                    <Dropdown id="display-ownership" v-model="selectedOwnershipEnumDesign" :options="ownershipOptions"
+                              option-label="viewName"
+                              class="w-full md:w-9rem"/>
+                  </div>
+                </div>
+              </Panel>
+            </div>
+
+            <!--COLOR-->
+            <div class="flex">
+
+              <Panel :header=' authorizationStore.isEmployee ? "Wybierz kolory - W ZAKŁADCE BUDOWANIE!" : "Wybierz kolory"' class="mt-5 w-full" >
+                <div class="flex flex-row gap-3 p-fluid">
+                  <!-- DEADLINE -->
+                  <div class="w-full">
+                    <label class="" for="colorBefore">Dni do terminu (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb" :disabled="authorizationStore.isEmployee"/>
+                      <Slider v-model="transparencyBefore" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorBefore}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                    <InputNumber class="w-full mt-2" v-model="daysBeforeProjectDeadline" inputId="daysBefore" mode="decimal" showButtons
+                                 :min="0" :max="100"/>
+
+                  </div>
+
+                  <!-- OVERDUE -->
+                  <div class="w-full">
+                    <label class="" for="colorOverdue">Przeterminowane (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb" :disabled="authorizationStore.isEmployee"/>
+                      <Slider v-model="transparencyOverdue" class="w-full  mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorOverdue}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+
+                  </div>
+
+                  <!-- COMPLETED -->
+                  <div class="w-full">
+                    <label class="" for="colorCompleted">Zakończone (wiersz):</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" :disabled="authorizationStore.isEmployee"/>
+                      <Slider v-model="transparencyCompleted" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorCompleted}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+
+                  </div>
+
+                  <!-- SUBMISSION -->
+                  <div class="w-full">
+                    <label class="" for="colorSubmission">Złożenie:</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb" :disabled="authorizationStore.isEmployee"/>
+                      <Slider v-model="transparencySubmission" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorSubmission}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                  </div>
+
+                  <!-- RECEIPT  -->
+                  <div class="w-full">
+                    <label class="" for="colorReceipt">Otrzymanie i inne:</label>
+                    <div class="flex flex-row align-items-center">
+                      <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb" :disabled="authorizationStore.isEmployee"/>
+                      <Slider v-model="transparencyReceipt" class="w-full  mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    </div>
+                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                         :style="{backgroundColor:getColorReceipt}">
+                      <span>Przykładowy tekst</span>
+                    </div>
+                  </div>
+                </div>
+              </Panel>
+            </div>
+
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
 
-    <div class="flex">
-
-      <!--COLOR-->
-      <Panel header="Wybierz kolory" class="mt-5">
-        <div class="flex flex-row gap-3 p-fluid">
-          <!-- DEADLINE -->
-          <div class="w-full">
-            <label class="" for="colorBefore">Dni do terminu (wiersz):</label>
-            <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb" class="w-full"/>
-            <Slider v-model="transparencyBefore" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorBefore}">
-              <span>Przykładowy tekst</span>
-            </div>
-            <InputNumber class="w-full mt-2" v-model="daysBefore" inputId="daysBefore" mode="decimal" showButtons
-                         :min="0" :max="100"/>
-
-          </div>
-
-          <!-- OVERDUE -->
-          <div class="w-full">
-            <label class="" for="colorOverdue">Przeterminowane (wiersz):</label>
-            <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb" class="w-full"/>
-            <!--            </div>-->
-            <Slider v-model="transparencyOverdue" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorOverdue}">
-              <span>Przykładowy tekst</span>
-            </div>
-
-          </div>
-
-          <!-- COMPLETED -->
-          <div class="w-full">
-            <label class="" for="colorCompleted">Zakończone (wiersz):</label>
-            <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" class="w-full"/>
-            <Slider v-model="transparencyCompleted" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorCompleted}">
-              <span>Przykładowy tekst</span>
-            </div>
-
-          </div>
-
-          <!-- SUBMISSION -->
-          <div class="w-full">
-            <label class="" for="colorSubmission">Złożenie:</label>
-            <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb" class="w-full"/>
-            <Slider v-model="transparencySubmission" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorSubmission}">
-              <span>Przykładowy tekst</span>
-            </div>
-          </div>
-
-          <!-- RECEIPT  -->
-          <div class="w-full">
-            <label class="" for="colorReceipt">Otrzymanie i inne:</label>
-            <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb" class="w-full"/>
-            <Slider v-model="transparencyReceipt" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorReceipt}">
-              <span>Przykładowy tekst</span>
-            </div>
-          </div>
-
-          <!-- FV_READY  -->
-          <div class="w-full">
-            <label class="" for="colorFvReady">Gotowe do faktury:</label>
-            <ColorPicker id="colorFvReady" v-model="colorFvReady" format="rgb" class="w-full"/>
-            <Slider v-model="transparencyFvReady" class="w-full mt-3"/>
-            <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
-                 :style="{backgroundColor:getColorFvReady}">
-              <span>Przykładowy tekst</span>
-            </div>
-          </div>
-        </div>
-      </Panel>
-    </div>
-
-    <!--          DASHBOARDY            -->
-    <Panel header="Dashboard" class="mt-5 col-5">
-      <div class="flex flex-row  gap-3 p-fluid">
-        <div>
-          <label class="" for="display-status">Dni do terminu projektu:</label>
-          <InputNumber class="w-full mt-2" v-model="daysBeforeProjectDeadlineDashboard" inputId="daysBefore" mode="decimal" showButtons
-                       :min="0" :max="100"/>
-        </div>
-        <div>
-          <label class="" for="display-rows">Dni do terminu wykonania:</label>
-          <InputNumber class="w-full mt-2" v-model="daysBeforeFinishDeadlineDashboard" inputId="daysBefore" mode="decimal" showButtons
-                       :min="0" :max="100"/>
-        </div>
-      </div>
-    </Panel>
 
     <template #footer>
       <div class="flex flex-row justify-content-end gap-2">
@@ -421,3 +678,5 @@ const daysBeforeFinishDeadlineDashboard = ref<number>(45)
     </template>
   </Dialog>
 </template>
+<style scoped>
+</style>

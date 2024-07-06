@@ -16,6 +16,11 @@ export const useSettingStore = defineStore("setting", {
                 rowsNumber: 1,
                 displayStatus: "",
                 gasConnectionColumns: [] as ColumnView[],
+                sortColumnDesign: "",
+                sortDirectionDesign: false,
+                rowsNumberDesign: 1,
+                displayStatusDesign: "",
+                gasConnectionColumnsDesign: [] as ColumnView[],
             } as GasConnectionSettings,
         } as AppSettings,
     }),
@@ -37,6 +42,25 @@ export const useSettingStore = defineStore("setting", {
         },
         getGasConnectionLockedColumns: (state) =>
             state.settings.gasConnectionSettings.gasConnectionColumns
+                .filter(col => col.frozen)
+                .filter(col => col.visible)
+                .sort((a: ColumnView, b: ColumnView) => a.header.localeCompare(b.header)),
+        //design
+        getGasConnectionVisibleColumnsDesign: (state) =>
+            state.settings.gasConnectionSettings.gasConnectionColumnsDesign
+                .filter(col => col.visible)
+                .sort((a: ColumnView, b: ColumnView) => a.sortIndex - b.sortIndex)
+                .map(col => ({...col})),
+        getGasConnectionInvisibleColumnsDesign: (state) =>
+            state.settings.gasConnectionSettings.gasConnectionColumnsDesign
+                .filter(col => !col.visible)
+                .sort((a: ColumnView, b: ColumnView) => a.header.localeCompare(b.header)),
+        getGasConnectionStatusDesign: (state) =>{
+            const status = state.settings.gasConnectionSettings.displayStatusDesign;
+            return UtilsService.getStatus(status);
+        },
+        getGasConnectionLockedColumnsDesign: (state) =>
+            state.settings.gasConnectionSettings.gasConnectionColumnsDesign
                 .filter(col => col.frozen)
                 .filter(col => col.visible)
                 .sort((a: ColumnView, b: ColumnView) => a.header.localeCompare(b.header)),
