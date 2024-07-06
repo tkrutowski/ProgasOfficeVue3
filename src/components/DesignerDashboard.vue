@@ -7,7 +7,7 @@ import {useDesignerStore} from "@/stores/designers.ts";
 import {computed, onMounted, ref, watch} from "vue";
 import {GasconnectionQuery} from "@/types/GasconnectionQuery.ts";
 import moment from "moment";
-import DesignersChart from "@/components/CharyByDesigners.vue";
+import DesignersChart from "@/components/CharByDesigners.vue";
 import TableForDesigners from "@/components/TableForDesigners.vue";
 
 const designerStore = useDesignerStore();
@@ -36,7 +36,7 @@ const getOverdueDesigner = computed<number>(() => {
       .length
 })
 const getDeadlineDesigner = computed(() => {
-  const daysBefore = settingStore.settings.gasConnectionSettings.daysBefore;
+  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
   return gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
       .filter(value => value.stage < 5)

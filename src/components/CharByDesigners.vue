@@ -52,7 +52,7 @@ const getOverdue = computed<number[]>(() => {
 
 const getDeadline = computed<number[]>(() => {
   let list: number[] = [];
-  const daysBefore = settingStore.settings.gasConnectionSettings.daysBefore;
+  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
   let ids = Array.from(getDesigners.value.keys());
   ids.forEach(id => {
     list.push(gasConnections.value
@@ -67,7 +67,7 @@ const getDeadline = computed<number[]>(() => {
 
 const getRegular = computed<number[]>(() => {
   let list: number[] = [];
-  const daysBefore = settingStore.settings.gasConnectionSettings.daysBefore;
+  const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
 
   let ids = Array.from(getDesigners.value.keys());
   ids.forEach(id => {
