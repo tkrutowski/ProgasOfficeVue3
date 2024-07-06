@@ -41,7 +41,7 @@ defineProps({
 
 
 .office-regular {
-  background-color: rgba(255, 245, 0, 1);
+  background-color: rgba(255, 245, 0, 1)!important;
   color: #332600 !important;
   border-color: rgb(255, 245, 0) !important;
   letter-spacing: 1px;
