@@ -47,7 +47,7 @@ const items = ref([
       {
         label: "Lista przyłączy - projekt",
         icon: "pi pi-fw pi-list",
-        disabled: authorizationStore.isDesignerOrAdmin,
+        disabled: !authorizationStore.isDesignerOrAdmin,
         // to: { name: "Invoices" },
         command: () => {
           if(window.location.href.includes(router.resolve({name: "GasConnectionsDesign"}).href)) {
@@ -61,7 +61,7 @@ const items = ref([
       {
         label: "Lista przyłączy - budowa",
         icon: "pi pi-fw pi-list",
-        disabled: authorizationStore.isEmployeeOrAdmin,
+        disabled: !authorizationStore.isEmployeeOrAdmin,
         // to: { name: "Invoices" },
         command: () => {
           if(window.location.href.includes(router.resolve({name: "GasConnectionsBuild"}).href)) {
