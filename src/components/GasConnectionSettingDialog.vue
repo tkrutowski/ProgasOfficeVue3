@@ -63,7 +63,7 @@ const getSettings = () => {
   //design
   columnsDesign.value = [[...settingStore.getGasConnectionInvisibleColumnsDesign], [...settingStore.getGasConnectionVisibleColumnsDesign]];
   sortColumnsDesign.value = [...settingStore.getGasConnectionVisibleColumnsDesign];
-  selectedSortColumnDesign.value = settingStore.getGasConnectionVisibleColumns.find(column => column.field === settingStore.settings.gasConnectionSettings.sortColumn);
+  selectedSortColumnDesign.value = settingStore.getGasConnectionVisibleColumns.find(column => column.field === settingStore.settings.gasConnectionSettings.sortColumnDesign);
   setSortDirectionDesign(settingStore.settings.gasConnectionSettings.sortDirectionDesign);
   selectedPaginatorDesign.value=settingStore.settings.gasConnectionSettings.rowsNumberDesign;
   selectedLockedColumnsDesign.value = [...settingStore.getGasConnectionLockedColumnsDesign];
@@ -195,7 +195,7 @@ const save = () => {
     daysBeforeFinishDeadline: daysBeforeFinishDeadline.value,
     daysBeforeProjectDeadline: daysBeforeProjectDeadline.value,
     gasConnectionColumnsDesign: columnsDesign.value?.flat(),
-    displayByOwnershipDesign: selectedOwnershipEnumDesign.value.viewName,
+    displayByOwnershipDesign: selectedOwnershipEnumDesign.value.name,
     displayStatusDesign: selectedStatusDesign.value.name,
     rowsNumberDesign: selectedPaginatorDesign.value,
     sortColumnDesign: selectedSortColumnDesign.value?.field,
@@ -354,13 +354,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
       </h2>
     </template>
     <div class="card">
-      <Tabs value="0">
+      <Tabs value="1">
         <TabList>
           <Tab value="0" v-if="authorizationStore.isEmployee">Budowanie</Tab>
           <Tab value="1" v-if="authorizationStore.isDesigner">Projektowanie</Tab>
         </TabList>
         <TabPanels>
-          <TabPanel value="0" >
+          <TabPanel value="0"  v-if="authorizationStore.isEmployee">
             <Panel header="Wybierz kolumny widoczne w tabeli">
               <div class="card">
                 <PickList v-model="columns" listStyle="height:342px" dataKey="field" breakpoint="1400px"
@@ -519,7 +519,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
             </div>
 
           </TabPanel>
-          <TabPanel value="1">
+          <TabPanel value="1" v-if="authorizationStore.isDesigner">
             <Panel header="Wybierz kolumny widoczne w tabeli">
               <div class="card">
                 <PickList v-model="columnsDesign" listStyle="height:342px" dataKey="field" breakpoint="1400px"
@@ -579,6 +579,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <div>
                     <label class="" for="display-designers">Własność:</label>
                     <Dropdown id="display-ownership" v-model="selectedOwnershipEnumDesign" :options="ownershipOptions"
+                              :disabled="!authorizationStore.isEmployeeOrAdmin"
                               option-label="viewName"
                               class="w-full md:w-9rem"/>
                   </div>

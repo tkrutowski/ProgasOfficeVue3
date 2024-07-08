@@ -185,7 +185,7 @@ onMounted(() => {
   getVisibleColumns()
   updateDisplayByDesigners()
   updateDisplayByStatus()
-  let displayStatus = settingStore.settings.gasConnectionSettings.displayStatus;
+  let displayStatus = settingStore.settings.gasConnectionSettings.displayStatusDesign;
   loadData(UtilsService.getStatus(displayStatus))
 });
 const dataLoading = ref<boolean>(false);
@@ -213,12 +213,12 @@ async function loadData(status: TaskStatus) {
 }
 
 async function filterByDesigners(data: GasconnectionQuery[]) {
-  if(selectedDisplayByDesigners.value.value === "MINE") {
+  if(selectedDisplayByOwnership.value.value === "MINE") {
     const designerId:number = authenticationStore.getUserDesignerId
     return data.filter(value => value.idDesigner === designerId)
   }
 
-  if(selectedDisplayByDesigners.value.value === "COMPANY") {
+  if(selectedDisplayByOwnership.value.value === "COMPANY") {
     let designerInCompany = await designerStore.getDesignerInCompany({name: "ALL", viewName: ""});
     let designerIds = designerInCompany.map(value => value.id);
     return data.filter(value => designerIds.includes(value.idDesigner))
@@ -271,7 +271,7 @@ const changeDate = (value: string | Date) => {
 const columns = ref<ColumnView[]>([]);
 
 function getVisibleColumns() {
-  columns.value = settingStore.getGasConnectionVisibleColumns;
+  columns.value = settingStore.getGasConnectionVisibleColumnsDesign;
 }
 
 watch(
@@ -285,7 +285,7 @@ watch(
 );
 
 function getSortOrder() {
-  const order = settingStore.settings.gasConnectionSettings.sortDirection;
+  const order = settingStore.settings.gasConnectionSettings.sortDirectionDesign;
   return order ? 1 : -1;
 }
 
@@ -307,25 +307,25 @@ function onStatusChange() {
   loadData(selectedDisplay.value)
 }
 function updateDisplayByStatus() {
-  let status  = settingStore.settings.gasConnectionSettings.displayStatus;
+  let status  = settingStore.settings.gasConnectionSettings.displayStatusDesign;
   selectedDisplay.value = UtilsService.getStatus(status)
 }
 // designer
-const displayByDesigners = ref([
+const displayByOwnership = ref([
   { name: 'Tylko moje', value: "MINE", constant: !authenticationStore.isDesignerOrAdmin },
   { name: 'Progas', value: "COMPANY", constant: !authenticationStore.isEmployeeOrAdmin },
   { name: 'Wszystkie', value: "ALL", constant: !authenticationStore.isEmployeeOrAdmin }
 ]);
-const selectedDisplayByDesigners = ref(displayByDesigners.value[0]);
+const selectedDisplayByOwnership = ref(displayByOwnership.value[0]);
 function updateDisplayByDesigners() {
-  let status = settingStore.settings.gasConnectionSettings.displayByOwnership;
-   let find = displayByDesigners.value.find(item => item.value === status);
+  let status = settingStore.settings.gasConnectionSettings.displayByOwnershipDesign;
+   let find = displayByOwnership.value.find(item => item.value === status);
    if (find)
-     selectedDisplayByDesigners.value = find;
+     selectedDisplayByOwnership.value = find;
 }
-watch(selectedDisplayByDesigners,(newValue, oldValue)=>{
+watch(selectedDisplayByOwnership,(newValue, oldValue)=>{
   if (newValue === null) {
-    selectedDisplayByDesigners.value=oldValue
+    selectedDisplayByOwnership.value=oldValue
   }
 })
 function displayByDesignersChange(newValue: any){
@@ -475,10 +475,10 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                @rowContextmenu="onRowContextMenu"
                paginator
                :rows-per-page-options="[10,20,30,50,75,100]"
-               :rows="settingStore.settings.gasConnectionSettings.rowsNumber"
+               :rows="settingStore.settings.gasConnectionSettings.rowsNumberDesign"
                scrollable scrollHeight="73vh"
                removableSort
-               :sort-field="settingStore.settings.gasConnectionSettings.sortColumn"
+               :sort-field="settingStore.settings.gasConnectionSettings.sortColumnDesign"
                :sort-order="getSortOrder()"
                filterDisplay="menu"
                :globalFilterFields="['designerFullName', 'coordinatorFullName', 'customerFullName', 'commune', 'city', 'street', 'taskNo', 'conditionNo', 'contractNo', 'customerPhone','connectionAgreementNumber','sapUpNo']"
@@ -501,7 +501,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                         placeholder="Wybierz status"
                         class="md:w-20rem w-full"/>
           </div>
-          <SelectButton v-model="selectedDisplayByDesigners" :options="displayByDesigners" optionDisabled="constant" optionLabel="name" @change="displayByDesignersChange"/>
+          <SelectButton v-model="selectedDisplayByOwnership" :options="displayByOwnership" optionDisabled="constant" optionLabel="name" @change="displayByDesignersChange"/>
           <div class="flex flex-row gap-2">
             <IconField iconPosition="left">
               <InputIcon>

@@ -122,24 +122,19 @@ export const useSettingStore = defineStore("setting", {
         //
         //UPDATE SETTINGS
         //
-        async updateSettingsGasConnectionDb(): Promise<boolean> {
+        async updateSettingsGasConnectionDb()  {
             console.log("START - updateSettingsGasConnectionDb()");
 
-            try {
-                await httpCommon.put(`/v1/settings`, this.settings);
-                // this.settings = response.data;
+            return await httpCommon.put(`/v1/settings`, this.settings).then(() => {
                 return true;
-            } catch (e) {
+
+            }).catch(e => {
+                console.log("ERROR updateSettingsGasConnectionDb(): ", e);
                 if (ErrorService.isAxiosError(e)) {
-                    console.log("ERROR updateCardDb(): ", e);
                     ErrorService.validateError(e);
-                } else {
-                    console.log("An unexpected error occurred: ", e);
                 }
                 return false;
-            } finally {
-                console.log("END - updateCardDb()");
-            }
+            })
         },
     },
 });
