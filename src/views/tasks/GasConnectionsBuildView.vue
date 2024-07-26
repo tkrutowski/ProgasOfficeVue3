@@ -15,6 +15,7 @@ import {ColumnView, GasConnectionSettings} from "@/types/Settings.ts";
 import GasConnectionSettingDialog from "@/components/GasConnectionSettingDialog.vue";
 import {TaskStatus} from "@/types/TaskStatus.ts";
 import moment from "moment/moment";
+import GasConnectiomDetailsDesignDialog from "@/components/tasks/GasConnectiomDetailsDesignDialog.vue";
 
 const toast = useToast();
 const gasConnectionQueryStore = useGasConnectionQueryStore();
@@ -374,6 +375,14 @@ async function saveSettings(gasConnectionSettings: GasConnectionSettings) {
   }
 }
 
+//selected row
+const showDetailsDialog = ref<boolean>(false);
+const onRowSelect = (event: any) => {
+  console.log("onRowSelected()", event);
+  showDetailsDialog.value=true;
+  // contextMenuRef.value.show(event.originalEvent);
+};
+
 //context menu
 const contextMenuRef = ref();
 const selectedGasConnection = ref<GasconnectionQuery>();
@@ -478,9 +487,12 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
   <TheMenuTasks/>
   <h2 class="color-yellow flex justify-content-center mt-3">Lista przyłączy - budowa</h2>
   <GasConnectionSettingDialog v-model:visible="showSettings" @save="saveSettings" @cancel="showSettings=false"/>
+  <GasConnectiomDetailsDesignDialog v-model:visible="showDetailsDialog" :gas-connection-id="selectedGasConnection?.idTask" />
   <div class="card mt-5">
     <ContextMenu ref="contextMenuRef" :model="menuModel" @hide="selectedGasConnection = undefined"/>
     <DataTable ref="dataTableRef" v-model:filters="filters"
+               v-model:selection="selectedGasConnection" selectionMode="single"
+               @rowSelect="onRowSelect"
                :value="gasConnections"
                contextMenu
                v-model:contextMenuSelection="selectedGasConnection"
