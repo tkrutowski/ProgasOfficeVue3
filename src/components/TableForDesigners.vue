@@ -66,7 +66,7 @@ watch(
       </Column>
       <Column field="stage" header="Etap" sortable >
         <template #body="{ data, field }">
-          <Tag class="flex justify-center w-full" :value="UtilsService.getStageAsString(data[field])" :style="UtilsService.getStyleByStage(data[field])"/>
+          <Tag class="flex justify-center w-full" :value="data[field].viewValue" :style="UtilsService.getStyleByStage(data[field].value)"/>
         </template>
       </Column>
     </DataTable>

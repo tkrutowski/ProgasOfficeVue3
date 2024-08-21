@@ -24,7 +24,7 @@ const settingStore = useSettingStore();
 const gasConnectionStore = useGasConnections();
 const gasConnection = ref<GasConnection>({
   plots: [],
-  stage: 0,
+  stage: {name:"LACK", value:-1,viewValue:""},
   accelerationDate: undefined,
   address: undefined,
   conditionDate: undefined,
@@ -357,11 +357,11 @@ onMounted(() => {
                 <TabPanel value="0">
 
                   <!--  STAGE 1 -->
-                  <Panel toggleable class="w-full mb-3 mt-3" :collapsed="+gasConnection.stage >=1"
-                         :style="gasConnection.stage === 0 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage >=1? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
+                  <Panel toggleable class="w-full mb-3 mt-3" :collapsed="+gasConnection.stage.value >=1"
+                         :style="gasConnection.stage.value === 0 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage.value >=1? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
                     <template #header>
                       <span class="font-bold"
-                            :style="gasConnection.stage === 0 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage >=1? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 1</span>
+                            :style="gasConnection.stage.value === 0 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage.value >=1? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 1</span>
                     </template>
 
                     <Fieldset :toggleable="true" class="mb-5">
@@ -537,11 +537,11 @@ onMounted(() => {
                   </Panel>
 
                   <!--  STAGE 2 -->
-                  <Panel toggleable class="w-full mb-3" :collapsed="+gasConnection.stage >=3"
-                         :style="gasConnection.stage === 2 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage >=3  ? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
+                  <Panel toggleable class="w-full mb-3" :collapsed="+gasConnection.stage.value >=3"
+                         :style="gasConnection.stage.value === 2 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage.value >=3  ? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
                     <template #header>
                       <span class="font-bold"
-                            :style="gasConnection.stage === 2 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage >=3? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 2</span>
+                            :style="gasConnection.stage.value === 2 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage.value >=3? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 2</span>
                     </template>
 
 
@@ -631,11 +631,11 @@ onMounted(() => {
                   </Panel>
 
                   <!--  STAGE 3 -->
-                  <Panel toggleable class="w-full mb-3" :collapsed="+gasConnection.stage >=5"
-                         :style="gasConnection.stage === 4 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage >=5? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
+                  <Panel toggleable class="w-full mb-3" :collapsed="+gasConnection.stage.value >=5"
+                         :style="gasConnection.stage.value === 4 ? UtilsService.getCustomColor('border-color','SUBMISSION') : +gasConnection.stage.value >=5? UtilsService.getCustomColor('border-color','RECEIPT'):UtilsService.getCustomColor('border-color','EMPTY')">
                     <template #header>
                       <span class="font-bold"
-                            :style="gasConnection.stage === 4 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage >=5? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 3</span>
+                            :style="gasConnection.stage.value === 4 ? UtilsService.getCustomColor('color','SUBMISSION') : +gasConnection.stage.value >=5? UtilsService.getCustomColor('color','RECEIPT'):UtilsService.getCustomColor('color','EMPTY')">ETAP 3</span>
                     </template>
 
 

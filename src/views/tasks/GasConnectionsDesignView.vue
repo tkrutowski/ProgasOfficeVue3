@@ -662,7 +662,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                        :max-selected-labels="4"
           >
             <template #option="slotProps">
-              <Tag :value="UtilsService.getStageAsString(slotProps.option.value)"
+              <Tag class="w-full" :value="UtilsService.getStageAsString(slotProps.option.value)"
                    :style="UtilsService.getStyleByStage(slotProps.option.value)"/>
             </template>
           </MultiSelect>

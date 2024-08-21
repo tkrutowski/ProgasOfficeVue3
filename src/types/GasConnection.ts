@@ -7,6 +7,7 @@ import {UtilityCompanyType} from "@/types/Commons.ts";
 import {Plot} from "@/types/Plot.ts";
 import {WorkRangeGasConnection, WorkRangeGasStation} from "@/types/WorkRange.ts";
 import {TaskType} from "@/types/TaskType.ts";
+import {Stage} from "@/types/Enums.ts";
 
 export interface GasConnection {
     idTask: number;
@@ -39,7 +40,7 @@ export interface GasConnection {
     info: string;
     isFinished: boolean;
     idGasConnectionSync: boolean;
-    stage: string | number;
+    stage: Stage;
     gasConnectionDesign: GasConnectionDesign;
     gasConnectionBuild: GasConnectionBuild;
 }

@@ -631,7 +631,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
 
         <!-- TAG  STAGES-->
         <template #body="{ data }">
-          <Tag class="flex justify-center" :value="UtilsService.getStageAsString(data.stage)" :style="UtilsService.getStyleByStage(data[col.field])"/>
+          <Tag class="flex justify-center w-full" :value="UtilsService.getStageAsString(data.stage)" :style="UtilsService.getStyleByStage(data[col.field])"/>
         </template>
         <template #filter="{ filterModel }">
           <MultiSelect v-model="filterModel.value"
@@ -642,7 +642,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                        :max-selected-labels="4"
           >
             <template #option="slotProps">
-              <Tag :value="UtilsService.getStageAsString(slotProps.option.value)" :style="UtilsService.getStyleByStage(slotProps.option.value)"/>
+              <Tag class="w-full" :value="UtilsService.getStageAsString(slotProps.option.value)" :style="UtilsService.getStyleByStage(slotProps.option.value)"/>
             </template>
           </MultiSelect>
         </template>
