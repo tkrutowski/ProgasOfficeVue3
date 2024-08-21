@@ -1,4 +1,5 @@
-interface User {
+type PrivilegeType = "NULL" | "WRITE" | "WRITE_ALL" | "READ" | "READ_ALL" | "DELETE" | "DELETE_ALL";
+export interface User {
   id: number;
   firstName: string;
   lastName: string;
@@ -11,4 +12,16 @@ interface User {
   idDesigner: number;
 }
 
-export default User;
+export interface Privilege {
+  id: number;
+  idUser: number;
+  role: Role;
+  read: PrivilegeType;
+  write: PrivilegeType;
+  delete: PrivilegeType;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+}

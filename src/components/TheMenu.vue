@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { useAuthorizationStore } from "../stores/authorization";
 import OfficeButton from "../components/OfficeButton.vue";
 import router from "../router";
+import {ref} from "vue";
 
 const authorizationStore = useAuthorizationStore();
 const items = ref([
@@ -13,11 +13,43 @@ const items = ref([
       router.push({ name: "Home" });
     },
   },
+  {
+    label: "Administracja",
+    icon: "pi pi-fw pi-user",
+    visible: authorizationStore.hasAccessAdmin,
+    items: [
+      {
+        label: "Użytkownicy",
+        icon: "pi pi-fw pi-users",
+        disabled: true,
+        // to: { name: "Invoice", params: { isEdit: "false", invoiceId: 0 } },
+        command: () => {
+          router.push({
+            name: "Book",
+            params: { isEdit: "false", bookId: 0 },
+          });
+        },
+      },
+      {
+        label: "Uprawnienia ",
+        icon: "pi pi-fw pi-folder-open",
+        disabled: !authorizationStore.hasAccessAdmin,
+        command: () => {
+          if(window.location.href.includes(router.resolve({name: "Privileges"}).href)) {
+            const redirect = JSON.stringify({ name: 'Privileges' });
+            router.push({ path: '/refresh', query: { redirect: redirect } });
+          }else {
+            router.push({ name: "Privileges" });
+          }
+        },
+      },
+    ],
+  },
 ]);
 </script>
 
 <template>
-  <Menubar :model="items" class="main-menu">
+  <Menubar :model="items" class="m-2important" >
     <template #start>
       <img alt="logo" src="../assets/logo_mini.png" height="30" class="mr-2" />
     </template>

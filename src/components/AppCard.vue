@@ -1,13 +1,13 @@
 <template>
   <Card class="custom-card"  >
     <template #header>
-      <h3 class="mb-0 text-center color-yellow header">
+      <h3 class="mb-0 text-center header pt-2">
         {{ textTitle }}
       </h3>
     </template>
 
     <template #content>
-      <p class="text-center color-yellow">{{ textContent }}</p>
+      <p class="text-center text-color">{{ textContent }}</p>
     </template>
 
     <template #footer>
@@ -59,13 +59,12 @@ function clicked() {
 }
 .custom-card {
   width: 270px;
-  background-color: #1a1a1a; /* Wybierz swój kolor */
-  border: 2px solid rgba(255, 245, 0, 1)
+  border-color: #dc3545!important;
 }
 .header{
   font-weight: bolder;
   letter-spacing: 1.2px;
-  background-color: rgba(255, 245, 0, .1)
+  color: var(--text-color)!important;
 
 }
 </style>

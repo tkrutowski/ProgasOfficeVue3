@@ -347,20 +347,22 @@ const daysBeforeProjectDeadline = ref<number>(40)
 </script>
 
 <template>
-  <Dialog modal class="p-fluid w-11" close-on-escape @abort="cancel">
+  <Dialog modal class="m-6 " close-on-escape @abort="cancel">
     <template #header>
-      <h2 class="color-yellow ml-5">
+      <h2 class="color-progas ml-5">
         Ustawienia przyłącza
       </h2>
     </template>
     <div class="card">
-      <Tabs value="1">
+      <Tabs value="0">
         <TabList>
-          <Tab value="0" v-if="authorizationStore.isEmployee">Budowanie</Tab>
-          <Tab value="1" v-if="authorizationStore.isDesigner">Projektowanie</Tab>
+          <Tab value="0" v-if="authorizationStore.hasAccessTasksGasConnectionBuild">Budowanie</Tab>
+          <Tab value="1" v-if="authorizationStore.isDesignerOrHasAccessTaskGasConnectionDesign">Projektowanie</Tab>
         </TabList>
         <TabPanels>
-          <TabPanel value="0"  v-if="authorizationStore.isEmployee">
+
+          <!--   BUILD    -->
+          <TabPanel value="0"  v-if="authorizationStore.hasAccessTasksGasConnectionBuild">
             <Panel header="Wybierz kolumny widoczne w tabeli">
               <div class="card">
                 <PickList v-model="columns" listStyle="height:342px" dataKey="field" breakpoint="1400px"
@@ -391,7 +393,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   </div>
                   <div>
                     <label class="" for="sort-order">Wybierz kierunek:</label>
-                    <Dropdown id="sort-order" v-model="selectedSortDirection" :options="sortDirections" optionLabel="name"
+                    <Select id="sort-order" v-model="selectedSortDirection" :options="sortDirections" optionLabel="name"
                               class="w-full md:w-13rem"/>
                   </div>
                   <div>
@@ -409,17 +411,17 @@ const daysBeforeProjectDeadline = ref<number>(40)
                 <div class="flex flex-row  gap-3 p-fluid">
                   <div>
                     <label class="" for="display-status">Status:</label>
-                    <Dropdown id="display-status" v-model="selectedStatus" :options="statuses" optionLabel="viewName"
+                    <Select id="display-status" v-model="selectedStatus" :options="statuses" optionLabel="viewName"
                               class="w-full md:w-12rem"/>
                   </div>
                   <div>
                     <label class="" for="display-rows">Ilość wierszy:</label>
-                    <Dropdown id="display-rows" v-model="selectedPaginator" :options="paginatorList"
+                    <Select id="display-rows" v-model="selectedPaginator" :options="paginatorList"
                               class="w-full md:w-9rem"/>
                   </div>
                   <div>
                     <label class="" for="display-designers">Własność:</label>
-                    <Dropdown id="display-ownership" v-model="selectedOwnershipEnum" :options="ownershipOptions"
+                    <Select id="display-ownership" v-model="selectedOwnershipEnum" :options="ownershipOptions"
                               option-label="viewName"
                               class="w-full md:w-9rem"/>
                   </div>
@@ -435,13 +437,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- DEADLINE -->
                   <div class="w-full">
                     <label class="" for="colorBefore">Dni do terminu (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row">
                       <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb"/>
-                      <Slider v-model="transparencyBefore" class="w-full mt-1  ml-3"/>
+                      <Slider v-model="transparencyBefore" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex  justify-center w-fill"
                          :style="{backgroundColor:getColorBefore}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorBefore)}">Przykładowy tekst</span>
                     </div>
                     <InputNumber class="w-full mt-2" v-model="daysBeforeFinishDeadline" inputId="daysBefore" mode="decimal" showButtons
                                  :min="0" :max="100"/>
@@ -451,13 +453,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- OVERDUE -->
                   <div class="w-full">
                     <label class="" for="colorOverdue">Przeterminowane (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row ">
                       <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb"/>
-                      <Slider v-model="transparencyOverdue" class="w-full  mt-1  ml-3"/>
+                      <Slider v-model="transparencyOverdue" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex  justify-center w-fill"
                          :style="{backgroundColor:getColorOverdue}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorOverdue)}">Przykładowy tekst</span>
                     </div>
 
                   </div>
@@ -465,13 +467,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- COMPLETED -->
                   <div class="w-full">
                     <label class="" for="colorCompleted">Zakończone (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row">
                       <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" />
-                      <Slider v-model="transparencyCompleted" class="w-full mt-1  ml-3"/>
+                      <Slider v-model="transparencyCompleted" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex  justify-center w-fill"
                          :style="{backgroundColor:getColorCompleted}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorCompleted)}">Przykładowy tekst</span>
                     </div>
 
                   </div>
@@ -479,39 +481,39 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- SUBMISSION -->
                   <div class="w-full">
                     <label class="" for="colorSubmission">Złożenie:</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row ">
                       <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb"/>
-                      <Slider v-model="transparencySubmission" class="w-full mt-1  ml-3"/>
+                      <Slider v-model="transparencySubmission" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorSubmission}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorSubmission)}">Przykładowy tekst</span>
                     </div>
                   </div>
 
                   <!-- RECEIPT  -->
                   <div class="w-full">
                     <label class="" for="colorReceipt">Otrzymanie i inne:</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row ">
                       <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb"/>
-                      <Slider v-model="transparencyReceipt" class="w-full  mt-1  ml-3"/>
+                      <Slider v-model="transparencyReceipt" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorReceipt}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorReceipt)}">Przykładowy tekst</span>
                     </div>
                   </div>
 
                   <!-- FV_READY  -->
                   <div class="w-full">
                     <label class="" for="colorFvReady">Gotowe do faktury:</label>
-                    <div class="flex flex-row align-items-center">
+                    <div class="flex flex-row ">
                       <ColorPicker id="colorFvReady" v-model="colorFvReady" format="rgb"/>
-                      <Slider v-model="transparencyFvReady" class="w-full  mt-1  ml-3"/>
+                      <Slider v-model="transparencyFvReady" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 fle justify-center w-fill"
                          :style="{backgroundColor:getColorFvReady}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorFvReady)}">Przykładowy tekst</span>
                     </div>
                   </div>
                 </div>
@@ -519,7 +521,9 @@ const daysBeforeProjectDeadline = ref<number>(40)
             </div>
 
           </TabPanel>
-          <TabPanel value="1" v-if="authorizationStore.isDesigner">
+
+          <!-- DESIGN -->
+          <TabPanel value="1" v-if="authorizationStore.isDesignerOrHasAccessTaskGasConnectionDesign">
             <Panel header="Wybierz kolumny widoczne w tabeli">
               <div class="card">
                 <PickList v-model="columnsDesign" listStyle="height:342px" dataKey="field" breakpoint="1400px"
@@ -542,7 +546,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
             <div class="flex flex-row  gap-3">
               <!--SORT-->
               <Panel header="Wybierz sposób sortowania" class="mt-5">
-                <div class="flex flex-row  gap-3 p-fluid">
+                <div class="flex flex-row  gap-3 ">
                   <div>
                     <label class="" for="sort-column">Wybierz kolumnę:</label>
                     <AutoComplete id="sort-column" v-model="selectedSortColumnDesign" :suggestions="filteredColumnsDesign"
@@ -550,7 +554,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   </div>
                   <div>
                     <label class="" for="sort-order">Wybierz kierunek:</label>
-                    <Dropdown id="sort-order" v-model="selectedSortDirectionDesign" :options="sortDirections" optionLabel="name"
+                    <Select id="sort-order" v-model="selectedSortDirectionDesign" :options="sortDirections" optionLabel="name"
                               class="w-full md:w-13rem"/>
                   </div>
                   <div>
@@ -565,21 +569,21 @@ const daysBeforeProjectDeadline = ref<number>(40)
 
               <!--          DISPLAY            -->
               <Panel header="Wybierz sposób wyświetlania" class="mt-5 ">
-                <div class="flex flex-row  gap-3 p-fluid">
+                <div class="flex flex-row  gap-3 ">
                   <div>
                     <label class="" for="display-status">Status:</label>
-                    <Dropdown id="display-status" v-model="selectedStatusDesign" :options="statusesDesign" optionLabel="viewName"
+                    <Select id="display-status" v-model="selectedStatusDesign" :options="statusesDesign" optionLabel="viewName"
                               class="w-full md:w-12rem"/>
                   </div>
                   <div>
                     <label class="" for="display-rows">Ilość wierszy:</label>
-                    <Dropdown id="display-rows" v-model="selectedPaginatorDesign" :options="paginatorList"
+                    <Select id="display-rows" v-model="selectedPaginatorDesign" :options="paginatorList"
                               class="w-full md:w-9rem"/>
                   </div>
                   <div>
                     <label class="" for="display-designers">Własność:</label>
-                    <Dropdown id="display-ownership" v-model="selectedOwnershipEnumDesign" :options="ownershipOptions"
-                              :disabled="!authorizationStore.isEmployeeOrAdmin"
+                    <Select id="display-ownership" v-model="selectedOwnershipEnumDesign" :options="ownershipOptions"
+                              :disabled="!authorizationStore.hasAccessTasksGasConnectionDesignReadAll"
                               option-label="viewName"
                               class="w-full md:w-9rem"/>
                   </div>
@@ -590,18 +594,18 @@ const daysBeforeProjectDeadline = ref<number>(40)
             <!--COLOR-->
             <div class="flex">
 
-              <Panel :header=' authorizationStore.isEmployee ? "Wybierz kolory - W ZAKŁADCE BUDOWANIE!" : "Wybierz kolory"' class="mt-5 w-full" >
-                <div class="flex flex-row gap-3 p-fluid">
+              <Panel :header=' authorizationStore.hasAccessTasksGasConnectionBuild ? "Wybierz kolory - W ZAKŁADCE BUDOWANIE!" : "Wybierz kolory"' class="mt-5 w-full" >
+                <div class="flex flex-row gap-3 ">
                   <!-- DEADLINE -->
                   <div class="w-full">
                     <label class="" for="colorBefore">Dni do terminu (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
-                      <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb" :disabled="authorizationStore.isEmployee"/>
-                      <Slider v-model="transparencyBefore" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    <div class="flex flex-row ">
+                      <ColorPicker id="colorBefore" v-model="colorBefore" format="rgb" />
+                      <Slider v-model="transparencyBefore" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorBefore}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorBefore)}">Przykładowy tekst</span>
                     </div>
                     <InputNumber class="w-full mt-2" v-model="daysBeforeProjectDeadline" inputId="daysBefore" mode="decimal" showButtons
                                  :min="0" :max="100"/>
@@ -611,13 +615,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- OVERDUE -->
                   <div class="w-full">
                     <label class="" for="colorOverdue">Przeterminowane (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
-                      <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb" :disabled="authorizationStore.isEmployee"/>
-                      <Slider v-model="transparencyOverdue" class="w-full  mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    <div class="flex flex-row ">
+                      <ColorPicker id="colorOverdue" v-model="colorOverdue" format="rgb" />
+                      <Slider v-model="transparencyOverdue" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorOverdue}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorOverdue)}">Przykładowy tekst</span>
                     </div>
 
                   </div>
@@ -625,13 +629,13 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- COMPLETED -->
                   <div class="w-full">
                     <label class="" for="colorCompleted">Zakończone (wiersz):</label>
-                    <div class="flex flex-row align-items-center">
-                      <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" :disabled="authorizationStore.isEmployee"/>
-                      <Slider v-model="transparencyCompleted" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    <div class="flex flex-row ">
+                      <ColorPicker id="colorCompleted" v-model="colorCompleted" format="rgb" />
+                      <Slider v-model="transparencyCompleted" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex  justify-center w-fill"
                          :style="{backgroundColor:getColorCompleted}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorCompleted)}">Przykładowy tekst</span>
                     </div>
 
                   </div>
@@ -639,26 +643,26 @@ const daysBeforeProjectDeadline = ref<number>(40)
                   <!-- SUBMISSION -->
                   <div class="w-full">
                     <label class="" for="colorSubmission">Złożenie:</label>
-                    <div class="flex flex-row align-items-center">
-                      <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb" :disabled="authorizationStore.isEmployee"/>
-                      <Slider v-model="transparencySubmission" class="w-full mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    <div class="flex flex-row ">
+                      <ColorPicker id="colorSubmission" v-model="colorSubmission" format="rgb" />
+                      <Slider v-model="transparencySubmission" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorSubmission}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorSubmission)}">Przykładowy tekst</span>
                     </div>
                   </div>
 
                   <!-- RECEIPT  -->
                   <div class="w-full">
                     <label class="" for="colorReceipt">Otrzymanie i inne:</label>
-                    <div class="flex flex-row align-items-center">
-                      <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb" :disabled="authorizationStore.isEmployee"/>
-                      <Slider v-model="transparencyReceipt" class="w-full  mt-1  ml-3" :disabled="authorizationStore.isEmployee"/>
+                    <div class="flex flex-row ">
+                      <ColorPicker id="colorReceipt" v-model="colorReceipt" format="rgb" />
+                      <Slider v-model="transparencyReceipt" class="w-full mt-2.5 ml-3 mr-3" disabled/>
                     </div>
-                    <div class="border-round mt-3 pt-3 pb-3 flex align-items-center justify-content-center w-fill"
+                    <div class="border-round mt-3 pt-3 pb-3 flex justify-center w-fill"
                          :style="{backgroundColor:getColorReceipt}">
-                      <span>Przykładowy tekst</span>
+                      <span :style="{color:UtilsService.getContrastTextColor(getColorReceipt)}">Przykładowy tekst</span>
                     </div>
                   </div>
                 </div>
@@ -672,7 +676,7 @@ const daysBeforeProjectDeadline = ref<number>(40)
 
 
     <template #footer>
-      <div class="flex flex-row justify-content-end gap-2">
+      <div class="flex flex-row justify-content-end gap-2 mr-10">
         <OfficeButton text="Anuluj" btn-type="office-regular" @click="cancel"/>
         <OfficeButton text="Zapisz" btn-type="office-save" @click="save" :loading="settingStore.savingSettings" :btn-disabled="settingStore.savingSettings"/>
       </div>

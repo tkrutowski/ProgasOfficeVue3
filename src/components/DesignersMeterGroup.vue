@@ -4,6 +4,7 @@ import {useSettingStore} from "@/stores/setting.ts";
 
 
 const settingStore = useSettingStore();
+
 const props = defineProps({
   designerName: {
     type: String,
@@ -26,6 +27,8 @@ const props = defineProps({
     default: 20
   },
 })
+
+if(settingStore.settings.userId ===0)settingStore.getSettingsFromDb()
 
 const fullName = ref<string>(props.designerName)
 const beforeDeadline = ref<number>(props.deadline)
@@ -70,7 +73,7 @@ const value = computed(() => [
 </script>
 
 <template>
-  <Card class="card-border">
+  <Card class="card-border w-full" >
     <template #title>Projektant: {{ fullName }} ({{ all }} szt.)</template>
     <template #content>
       <MeterGroup :value="value" :max="all"/>
@@ -79,8 +82,4 @@ const value = computed(() => [
 </template>
 
 <style scoped>
-.card-border {
-  border-radius: 8px;
-  border: 1px solid rgba(255, 245, 0, 1)
-}
 </style>

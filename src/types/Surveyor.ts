@@ -1,6 +1,6 @@
 import {ActiveStatus} from "@/types/Enums.ts";
 
-export interface Designer {
+export interface Surveyor {
     id: number;
     name: string;
     lastName: string;
@@ -13,15 +13,4 @@ export interface Designer {
     zip: string;
     status: ActiveStatus;
     employee: boolean;
-}
-
-export interface DesignerTraffic {
-    id: number;
-    name: string;
-    lastName: string;
-    phone: string;
-    phone2: string;
-    mail: string;
-    info: string;
-    status: ActiveStatus;
 }

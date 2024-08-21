@@ -25,7 +25,7 @@ export const useGasConnectionQueryStore = defineStore("gasConnectionQuery", {
         //GET FIRM BY ID
         //
         async getGasConnectionList(status: TaskStatus): Promise<GasconnectionQuery[]> {
-            // console.log("GET_FIRM id:", id);
+            console.log("START getGasConnectionList:", status);
             const authorization = useAuthorizationStore();
             const result = await this.getGasConnectionQueriesByStatusFromDb(status)
             if (result) {
@@ -105,22 +105,23 @@ export const useGasConnectionQueryStore = defineStore("gasConnectionQuery", {
         //GET GASCONNECTIONS
         //
         async getGasConnectionQueriesByStatusFromDb(status: TaskStatus): Promise<GasconnectionQuery[] | undefined> {
-            console.log("START - getGasConnectionQueriesByCompleteFromDb()");
+            console.log("START - getGasConnectionQueriesByStatusFromDb()");
             this.loadingGasConnectionQuery = true;
 
             try {
                 const response = await httpCommon.get(`/v1/query/gasconnection?status=` + status.name)
+                console.log('getGasConnectionQueriesByStatusFromDb(): SIZE: ',response.data.length)
                 return response.data;
             } catch (e) {
                 if (ErrorService.isAxiosError(e)) {
-                    console.log("ERROR getGasConnectionQueriesByCompleteFromDb(): ", e);
+                    console.log("ERROR getGasConnectionQueriesByStatusFromDb(): ", e);
                     ErrorService.validateError(e);
                 } else {
                     console.log("An unexpected error occurred: ", e);
                 }
             } finally {
                 this.loadingGasConnectionQuery = false;
-                console.log("END - getGasConnectionQueriesByCompleteFromDb()");
+                console.log("END - getGasConnectionQueriesByStatusFromDb()");
 
             }
         },

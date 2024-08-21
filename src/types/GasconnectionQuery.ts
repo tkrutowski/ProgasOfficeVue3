@@ -22,8 +22,8 @@ export interface GasconnectionQuery {
     zudpReceiptDate: string | Date;
     utilityCompanySubmissionDate: string | Date;
     utilityCompanyReceiptDate: string | Date;
-    agreementSubmissionDate: string | Date;
-    agreementReceiptDate: string | Date;
+    wsgAgreementSubmissionDate: string | Date;
+    wsgAgreementReceiptDate: string | Date;
     substationNotificationSubmissionDate: string | Date;
     realizationStartDate: string | Date;
     realizationEndDate: string | Date;

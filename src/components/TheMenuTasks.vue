@@ -17,7 +17,7 @@ const items = ref([
   {
     label: "Tablica",
     icon: "pi pi-chart-bar",
-    // to: { name: "Home" },
+    disabled: !authorizationStore.hasAccessTasks,
     command: () => {
       if(window.location.href.includes(router.resolve({name: "TasksHome"}).href)) {
         const redirect = JSON.stringify({ name: 'TasksHome' });
@@ -30,7 +30,7 @@ const items = ref([
   {
     label: "Przyłącza",
     // icon: "pi pi-fw pi-euro",
-    // disabled: !authorizationStore.hasAccessFinance,
+    disabled: !authorizationStore.hasAccessTasksGasConnection,
     items: [
       {
         label: "Nowe przyłącze",
@@ -47,7 +47,7 @@ const items = ref([
       {
         label: "Lista przyłączy - projekt",
         icon: "pi pi-fw pi-list",
-        disabled: !authorizationStore.isDesignerOrAdmin,
+        disabled: !authorizationStore.isDesignerOrHasAccessTaskGasConnectionDesign,
         // to: { name: "Invoices" },
         command: () => {
           if(window.location.href.includes(router.resolve({name: "GasConnectionsDesign"}).href)) {
@@ -61,7 +61,7 @@ const items = ref([
       {
         label: "Lista przyłączy - budowa",
         icon: "pi pi-fw pi-list",
-        disabled: !authorizationStore.isEmployeeOrAdmin,
+        disabled: !authorizationStore.hasAccessTasksGasConnectionBuild,
         // to: { name: "Invoices" },
         command: () => {
           if(window.location.href.includes(router.resolve({name: "GasConnectionsBuild"}).href)) {

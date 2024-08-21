@@ -32,7 +32,7 @@ const getOverdueDesigner = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => value.idDesigner === idDesigner.value)
       .filter(value => value.stage < 5)
-      .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
+      .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
       .length
 })
 const getDeadlineDesigner = computed(() => {
@@ -62,7 +62,7 @@ const getOverdueCompany = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => getCompanyDesignerIds.value.includes(value.idDesigner))
       .filter(value => value.stage < 5)
-      .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
+      .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
       .length
 })
 const getDeadlineCompany = computed<number>(() => {
@@ -100,43 +100,35 @@ const getForDesignerChart = computed(() => {
 <template>
   <Panel toggleable>
     <template #header>
-      <div>
-        <span class="color-yellow">PROJEKTOWANIE</span>
-      </div>
+      <h4 class="font-bold">PROJEKTOWANIE</h4>
     </template>
-    <div class="grid card">
-      <div v-if="authStore.isDesigner || authStore.isEmployee"
-           class="col-12 lg:col-5 ">
-        <DesignersDashboard class="mt-2"
-            v-if="authStore.isDesigner"
-            :overdue="getOverdueDesigner"
-            :deadline="getDeadlineDesigner"
-            :normal="getRegularDesigner"
-            :designer-name="getDesignerName"
-        />
-        <DesignersDashboard class="mt-2"
-            v-if="authStore.isEmployee"
-            :overdue="getOverdueCompany"
-            :deadline="getDeadlineCompany"
-            :normal="getRegularCompany"
-            designer-name="PROGAS SC"
-        />
-      </div>
-      <div class="col-7">
+    <div class="flex flex-row gap-4 flex-wrap w-full">
+      <DesignersDashboard class=" w-full"
+                          v-if="authStore.isDesigner"
+                          :overdue="getOverdueDesigner"
+                          :deadline="getDeadlineDesigner"
+                          :normal="getRegularDesigner"
+                          :designer-name="getDesignerName"
+      />
+      <DesignersDashboard class="w-full"
+                          v-if="authStore.hasAccessTasksGasConnectionDesignReadAll"
+                          :overdue="getOverdueCompany"
+                          :deadline="getDeadlineCompany"
+                          :normal="getRegularCompany"
+                          designer-name="PROGAS SC"
+      />
 
-        <DesignersChart
-            v-if="authStore.isEmployee"
-            :gas-connection-list="getForDesignerChart"
-            class=" p-3 m-2"
-        />
-      </div>
-      <div class="col">
-        <TableForDesigners
-            id="tableForDesigners"
-            :gas-connection-list="getForDesignerTable"
-            :days-before=" settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline"
-        />
-      </div>
+      <DesignersChart class=" w-full"
+                      v-if="authStore.hasAccessTasksGasConnectionDesignReadAll"
+                      :gas-connection-list="getForDesignerChart"
+                      style="min-width: 600px; min-height: 400px;"
+      />
+      <TableForDesigners class="w-full"
+                         v-if="authStore.isDesigner"
+                         id="tableForDesigners"
+                         :gas-connection-list="getForDesignerTable"
+                         :days-before=" settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline"
+      />
 
     </div>
   </Panel>

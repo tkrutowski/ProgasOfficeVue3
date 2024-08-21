@@ -71,7 +71,8 @@ const setChartData = () => {
   };
 };
 const setChartOptions = () => {
-  const textColor = "rgba(255, 255, 255, 0.87)";
+  const documentStyle = getComputedStyle(document.documentElement);
+  const textColor = documentStyle.getPropertyValue('--p-text-color');
 
   return {
     // responsive: true,
@@ -91,10 +92,10 @@ const setChartOptions = () => {
 <template>
   <Card class="card-border flex justify-content-center">
     <template #title>
-      <span class="card-header">Ilość przyłączy wg. rozdzielnii.</span>
+      <p class="card-header">Ilość przyłączy wg. rozdzielnii.</p>
     </template>
     <template #content>
-      <Chart type="doughnut" :data="chartData" :options="chartOptions" :height="250" :width="500"></Chart>
+      <Chart type="doughnut" :data="chartData" :options="chartOptions" class="w-[40rem]"></Chart>
     </template>
   </Card>
 </template>
@@ -102,15 +103,13 @@ const setChartOptions = () => {
 <style scoped>
 .card-header{
   font-size: 1.3rem;
-  font-weight: bold;
 }
 .card-border {
   border-radius: 8px;
-  border: 1px solid rgba(255, 245, 0, 1)
 }
 .chart-container {
   position: relative;
-  width: 300px; /* Adjust this value to change the overall size of the chart */
-  height: 300px; /* Adjust this value to change the overall size of the chart */
+  width: 100px; /* Adjust this value to change the overall size of the chart */
+  height: 100px; /* Adjust this value to change the overall size of the chart */
 }
 </style>

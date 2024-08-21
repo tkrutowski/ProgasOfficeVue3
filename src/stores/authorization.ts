@@ -27,28 +27,20 @@ export const useAuthorizationStore = defineStore("authorization", {
             }
             return this.isAuthenticated;
         },
-
-        hasAccessGoAhead(): boolean {
-            console.log("hasAccessGoAhead()");
+        hasAccessAdmin(): boolean {
             try {
-                // console.log("token : ", this.token);
                 const decoded: any = jwt_decode(this.token);
-                // console.log("token decoded: ", decoded);
                 return (
-                    decoded.authorities.includes("ROLE_GOAHEAD") ||
                     decoded.authorities.includes("ROLE_ADMIN")
                 );
             } catch (error) {
-                console.log("hasAccessGoAhead() ERROR", error);
+                console.log("hasAccessFinance() ERROR", error);
                 return false;
             }
         },
         hasAccessFinance(): boolean {
-            console.log("hasAccessFinance()");
             try {
-                // console.log("token : ", this.token);
                 const decoded: any = jwt_decode(this.token);
-                // console.log("token decoded: ", decoded);
                 return (
                     decoded.authorities.includes("ROLE_FINANCE") ||
                     decoded.authorities.includes("ROLE_ADMIN")
@@ -59,11 +51,76 @@ export const useAuthorizationStore = defineStore("authorization", {
             }
         },
         hasAccessTasks(): boolean {
-            console.log("hasAccessTasks()");
             try {
                 const decoded: any = jwt_decode(this.token);
                 return (
                     decoded.authorities.includes("ROLE_TASKS") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasksGasConnection(): boolean {
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return (
+                    decoded.authorities.includes("ROLE_TASKS_CONNECTION") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasksGasConnectionDesign(): boolean {
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return (
+                    decoded.authorities.includes("ROLE_TASKS_CONNECTION_DESIGN") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasksGasConnectionDesignReadAll(): boolean {
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return (
+                    decoded.authorities.includes("TASKS_CONNECTION_DESIGN_READ_ALL") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasksGasConnectionBuild(): boolean {
+            try {
+                const decoded: any = jwt_decode(this.token);
+                console.log("ROLE_ADMIN", decoded.authorities.includes("ROLE_ADMIN"))
+                console.log("ROLE_TASKS_CONNECTION_BUILD", decoded.authorities.includes("ROLE_TASKS_CONNECTION_BUILD"))
+                console.log("RAZE|M", (
+                    decoded.authorities.includes("ROLE_TASKS_CONNECTION_BUILD") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                ))
+                return (
+                    decoded.authorities.includes("ROLE_TASKS_CONNECTION_BUILD") ||
+                    decoded.authorities.includes("ROLE_ADMIN")
+                );
+            } catch (error) {
+                console.log("hasAccessTasks() ERROR", error);
+                return false;
+            }
+        },
+        hasAccessTasksGasConnectionFinance(): boolean {
+            try {
+                const decoded: any = jwt_decode(this.token);
+                return (
+                    decoded.authorities.includes("ROLE_TASKS_CONNECTION_FINANCE") ||
                     decoded.authorities.includes("ROLE_ADMIN")
                 );
             } catch (error) {
@@ -103,11 +160,10 @@ export const useAuthorizationStore = defineStore("authorization", {
                 return false;
             }
         },
-        isDesignerOrAdmin(): boolean {
-            console.log("isDesigner()");
+        isDesignerOrHasAccessTaskGasConnectionDesign(): boolean {
             try {
                 const decoded: any = jwt_decode(this.token);
-                if (decoded.authorities.includes("ROLE_ADMIN"))
+                if (decoded.authorities.includes("ROLE_TASKS_CONNECTION_DESIGN") || decoded.authorities.includes("ROLE_ADMIN"))
                     return true;
                 return decoded.idDesigner > 0;
             } catch (error) {

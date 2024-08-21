@@ -57,7 +57,7 @@ watch(
             <span class="flex justify-content-center"> {{ data[field] }} </span>
           </template>
         </Column>
-        <Column field="agreementReceiptDate" header="Uzg. WSG " sortable>
+        <Column field="wsgAgreementReceiptDate" header="Uzg. WSG " sortable>
           <template #body="{ data, field }">
             <div>
               <span class="flex justify-content-center">&nbsp{{ UtilsService.formatDate(data[field]) }}</span>

@@ -44,7 +44,7 @@ const getOverdue = computed<number[]>(() => {
     list.push(gasConnections.value
         .filter(value => value.idDesigner === id)
         .filter(value => value.stage < 5)
-        .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
+        .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
         .length)
   })
   return list;
@@ -74,7 +74,7 @@ const getRegular = computed<number[]>(() => {
     let overdue = gasConnections.value
         .filter(value => value.idDesigner === id)
         .filter(value => value.stage < 5)
-        .filter(value => moment(value.agreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
+        .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.projectDeadline, 'days') > 0)
         .length
     let deadline = gasConnections.value
         .filter(value => value.idDesigner === id)
@@ -122,9 +122,9 @@ const setChartData = () => {
 };
 const setChartOptions = () => {
   const documentStyle = getComputedStyle(document.documentElement);
-  const textColor = "rgba(255, 255, 255, 0.87)";
-  const textColorSecondary = "rgba(255, 255, 255, 0.87)";
-  const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
+  const textColor = documentStyle.getPropertyValue('--p-text-color');
+  const textColorSecondary = documentStyle.getPropertyValue('--p-text-color');
+  const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
 
   return {
     maintainAspectRatio: false,
@@ -167,10 +167,10 @@ const setChartOptions = () => {
 <template>
   <Card class="card-border">
     <template #title>
-      <span class="card-header">Lista przyłączy wg. projektantów.</span>
+      <p class="card-header">Lista przyłączy wg. projektantów.</p>
     </template>
     <template #content>
-      <Chart type="bar" :data="chartData" :options="chartOptions" class="h-25rem"></Chart>
+      <Chart type="bar" :data="chartData" :options="chartOptions"  class="h-[25rem]"></Chart>
     </template>
   </Card>
 </template>
@@ -178,10 +178,5 @@ const setChartOptions = () => {
 <style scoped>
 .card-header{
   font-size: 1.3rem;
-  font-weight: bold;
-}
-.card-border {
-  border-radius: 8px;
-  border: 1px solid rgba(255, 245, 0, 1)
 }
 </style>

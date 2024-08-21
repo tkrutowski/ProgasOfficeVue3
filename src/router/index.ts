@@ -10,6 +10,8 @@ import TasksHomeView from "../views/tasks/TasksHomeView.vue";
 import GasConnectionsBuildView from "../views/tasks/GasConnectionsBuildView.vue";
 import GasConnectionsDesignView from "@/views/tasks/GasConnectionsDesignView.vue";
 
+//ADMIN
+import PrivilegesView  from "@/views/PrivilegesView.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -49,6 +51,12 @@ const routes: Array<RouteRecordRaw> = [
         path: "/tasks/gas-connection-design/all",
         name: "GasConnectionsDesign",
         component: GasConnectionsDesignView,
+    },
+    //----------------------------------------------ADMIN--------------------------------------------
+    {
+        path: "/admin/privileges",
+        name: "Privileges",
+        component: PrivilegesView,
     },
 ];
 

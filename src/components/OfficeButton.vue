@@ -41,17 +41,16 @@ defineProps({
 
 
 .office-regular {
-  background-color: rgba(255, 245, 0, 1)!important;
+  background-color: var(--progas-color);
   color: #332600 !important;
-  border-color: rgb(255, 245, 0) !important;
+  border-color: var(--progas-color) !important;
   letter-spacing: 1px;
   text-transform: uppercase;
   font-weight: bold;
 }
 
 .office-regular:hover {
-  color: white !important;
-  background-color: rgba(128, 123, 0) !important;
+  background-color: var(--progas-color-hoover)!important;
 }
 
 .office-regular:disabled {

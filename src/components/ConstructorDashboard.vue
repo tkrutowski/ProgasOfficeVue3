@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DesignersDashboard from "@/components/DesignersMeterGroup.vue";
-import {useAuthorizationStore} from "@/stores/authorization.ts";
 import {useGasConnectionQueryStore} from "@/stores/gasconnectionQuery.ts";
 import {useSettingStore} from "@/stores/setting.ts";
 import {useDesignerStore} from "@/stores/designers.ts";
@@ -12,7 +11,6 @@ import TableForConstructionManager from "@/components/TableForConstructionManage
 
 const designerStore = useDesignerStore();
 const settingStore = useSettingStore();
-const authStore = useAuthorizationStore();
 const gasConnectionQueryStore = useGasConnectionQueryStore();
 const gasConnectionCached = ref<GasconnectionQuery[]>([])
 
@@ -32,7 +30,7 @@ const getCompanyDesignerIds = computed<number[]>(() => {
 const getOverdueCompany = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => getCompanyDesignerIds.value.includes(value.idDesigner))
-      .filter(value => moment(value.agreementReceiptDate).diff(value.finishDeadline, 'days') > 0)
+      .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.finishDeadline, 'days') > 0)
       .length
 })
 const getDeadlineCompany = computed<number>(() => {
@@ -54,7 +52,7 @@ const getRegularCompany = computed<number>(() => {
 const getOverdueAll = computed<number>(() => {
   return gasConnectionCached.value
       .filter(value => !getCompanyDesignerIds.value.includes(value.idDesigner))
-      .filter(value => moment(value.agreementReceiptDate).diff(value.finishDeadline, 'days') > 0)
+      .filter(value => moment(value.wsgAgreementReceiptDate).diff(value.finishDeadline, 'days') > 0)
       .length
 })
 const getDeadlineAll = computed<number>(() => {
@@ -79,7 +77,7 @@ const getForDesignerChart = computed(() => {
 const getReadyToBuild = computed(() => {
   const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeFinishDeadline;
   return gasConnectionCached.value
-      .filter(value => value.agreementReceiptDate !== '0001-01-01')
+      .filter(value => value.wsgAgreementReceiptDate !== '0001-01-01')
       .filter(value => moment(value.finishDeadline).diff(moment(), 'days') <= daysBefore)
       .filter(value => moment(value.finishDeadline).diff(moment(), 'days') > 0)
       .sort((a, b) => moment(a.finishDeadline).diff(moment(b.finishDeadline)))
@@ -87,33 +85,28 @@ const getReadyToBuild = computed(() => {
 </script>
 
 <template>
-  <Panel v-if="authStore.isEmployee" toggleable>
+  <Panel toggleable>
     <template #header>
-      <div>
-        <span class="color-yellow">WYKONAWSTWO</span>
-      </div>
+      <h4 class="font-bold">WYKONAWSTWO</h4>
     </template>
-    <div class="grid card">
-      <div class="col-12 lg:col-5">
-        <DesignersDashboard class="mt-2"
-                            :overdue="getOverdueCompany"
-                            :deadline="getDeadlineCompany"
-                            :normal="getRegularCompany"
-                            designer-name="PROGAS SC"
-        />
-        <DesignersDashboard class="mt-2"
-            :overdue="getOverdueAll"
-            :deadline="getDeadlineAll"
-            :normal="getRegularAll"
-            designer-name="Pozostali"
-        />
-      </div>
-      <div class="col">
-        <ChartBySubstations v-if="authStore.isEmployee" :gas-connection-list="getForDesignerChart"
-                            class="w-full p-3 m-2"/>
-      </div>
+    <div class="flex flex-row gap-4 flex-wrap w-full">
+      <DesignersDashboard class="w-full"
+                          :overdue="getOverdueCompany"
+                          :deadline="getDeadlineCompany"
+                          :normal="getRegularCompany"
+                          designer-name="PROGAS SC"
+      />
+      <DesignersDashboard class="w-full"
+                          :overdue="getOverdueAll"
+                          :deadline="getDeadlineAll"
+                          :normal="getRegularAll"
+                          designer-name="Pozostali"
+      />
+      <TableForConstructionManager :gas-connection-list="getReadyToBuild"/>
+      <ChartBySubstations
+                          :gas-connection-list="getForDesignerChart"
+                          class="w-full"/>
     </div>
-    <TableForConstructionManager :gas-connection-list="getReadyToBuild"/>
   </Panel>
 </template>
 

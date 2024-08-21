@@ -30,7 +30,7 @@ watch(
 <template>
   <Card class="card-border  ">
     <template #title>
-      <span class="card-header">Lista przyłączy przeterminowanych lub ze zbliżającym się terminem projektu (mniej niż {{props.daysBefore}} dni).</span>
+      <span class="card-header">Lista Twoich przyłączy przeterminowanych lub ze zbliżającym się terminem projektu (mniej niż {{props.daysBefore}} dni).</span>
     </template>
     <template #content>
     <DataTable :value="list" tableStyle="min-width: 50rem" removableSort showGridlines scrollable scrollHeight="400px">
@@ -39,34 +39,34 @@ watch(
 
       <Column field="commune" header="Gmina">
         <template #body="{ data, field }">
-          <span class="flex justify-content-center"> {{ data[field] }} </span>
+          <span class="flex justify-center"> {{ data[field] }} </span>
         </template>
       </Column>
       <Column field="city" header="Miasto" sortable >
         <template #body="{ data, field }">
-          <span class="flex justify-content-center"> {{ data[field] }} </span>
+          <span class="flex justify-center"> {{ data[field] }} </span>
         </template>
       </Column>
       <Column field="street" header="Ulica, działka" sortable >
         <template #body="{ data, field }">
-          <span class="flex justify-content-center"> {{ data[field] }} </span>
+          <span class="flex justify-center"> {{ data[field] }} </span>
         </template>
       </Column>
       <Column field="sapUpNo" header="SAP/UP" sortable >
         <template #body="{ data, field }">
-          <span class="flex justify-content-center"> {{ data[field] }} </span>
+          <span class="flex justify-center"> {{ data[field] }} </span>
         </template>
       </Column>
       <Column field="projectDeadline" header="Termin projektu" sortable >
         <template #body="{ data, field }">
           <div>
-            <span class="flex justify-content-center">&nbsp{{  UtilsService.formatDate(data[field]) }}</span>
+            <span class="flex justify-center">&nbsp{{  UtilsService.formatDate(data[field]) }}</span>
           </div>
         </template>
       </Column>
       <Column field="stage" header="Etap" sortable >
         <template #body="{ data, field }">
-          <Tag class="flex justify-content-center" :value="UtilsService.getStageAsString(data[field])" :style="UtilsService.getStageTagStyle(data[field])"/>
+          <Tag class="flex justify-center w-full" :value="UtilsService.getStageAsString(data[field])" :style="UtilsService.getStyleByStage(data[field])"/>
         </template>
       </Column>
     </DataTable>

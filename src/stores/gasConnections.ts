@@ -1,11 +1,23 @@
 import {defineStore} from "pinia";
 import httpCommon from "../http-common";
 import {ErrorService} from "../service/ErrorService";
-import {GasConnection} from "@types/GasConnection.ts";
+import {GasConnection} from "@/types/GasConnection.ts";
 
 export const useGasConnections = defineStore("gasConnections", {
     state: () => ({
         loadingGasConnection: false,
+        plotsShareLimit: 51,
+        pgnRecipients: ["Dąbrowski Wojciech",
+            "Konrady Paweł",
+            "Kowalski Włodzimierz",
+            "Kubaczyk Robert",
+            "Maciejewski Paweł",
+            "Mager Sebastian",
+            "Matuszak Tomasz",
+            "Mazur Tomasz",
+            "Olczak Andrzej",
+            "Prętki Paweł",
+            "Tomczak Krzysztof"],
     }),
 
     //getters = computed
@@ -20,12 +32,13 @@ export const useGasConnections = defineStore("gasConnections", {
         //
         //GET   GASCONNECTION BY ID
         //
-        async getGasConnectionFromDb(id: number): Promise<GasConnection> {
-            console.log("START - getGasConnectionQueryFromDb(" + id + ")");
-            this.loadingGasConnectio = true;
+        async getGasConnectionFromDb(id: number): Promise<GasConnection | undefined> {
+            console.log("START - getGasConnectionFromDb(" + id + ")");
+            this.loadingGasConnection = true;
 
             try {
                 const response = await httpCommon.get(`/v1/gasconnection/` + id);
+                console.log("getGasConnectionFromDb: ", response.data);
                 return response.data;
             } catch (e) {
                 if (ErrorService.isAxiosError(e)) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from 'vue';
-import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
+import {FilterMatchMode, FilterOperator} from '@primevue/core/api';
 import {useGasConnectionQueryStore} from "@/stores/gasconnectionQuery.ts";
 import {useSettingStore} from "@/stores/setting.ts";
 import {useAuthorizationStore} from "@/stores/authorization.ts";
@@ -15,7 +15,7 @@ import {ColumnView, GasConnectionSettings} from "@/types/Settings.ts";
 import GasConnectionSettingDialog from "@/components/GasConnectionSettingDialog.vue";
 import {TaskStatus} from "@/types/TaskStatus.ts";
 import moment from "moment/moment";
-import GasConnectiomDetailsDesignDialog from "@/components/tasks/GasConnectiomDetailsDesignDialog.vue";
+import GasConnectiomDetailsDesignDialog from "@/components/tasks/GasConnectionDetailsDesignDialog.vue";
 
 const toast = useToast();
 const gasConnectionQueryStore = useGasConnectionQueryStore();
@@ -43,6 +43,7 @@ const initFilters = () => {
 
     commune: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
     city: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
+    street: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
     taskNo: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
     contractNo: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
     customerPhone: {operator: FilterOperator.AND, constraints: [{value: null, matchMode: FilterMatchMode.STARTS_WITH}]},
@@ -182,7 +183,8 @@ const coordinators = ref<String[]>([]);
 const customers = ref<String[]>([]);
 onMounted(() => {
   console.log("MOUNTED GasConnectionView")
-  if(designerStore.designersCached.length === 0) designerStore.refreshDesignerCache()
+  if (designerStore.designersCached.length === 0) designerStore.refreshDesignerCache()
+  if (designerStore.designersTrafficCached.length === 0) designerStore.refreshDesignerCache()
   getVisibleColumns()
   updateDisplayByDesigners()
   updateDisplayByStatus()
@@ -198,13 +200,12 @@ async function loadData(status: TaskStatus) {
       .filter(value => value.stage < 5);
 
 
-
-  if(status.name === "NOT_FINISHED") {
-      data = data.filter(value => value.stage < 5);
+  if (status.name === "NOT_FINISHED") {
+    data = data.filter(value => value.stage < 5);
   }
 
   if (data) {
-    let filteredData:GasconnectionQuery[] = await filterByDesigners(data)
+    let filteredData: GasconnectionQuery[] = await filterByDesigners(data)
     gasConnections.value = mapdates(filteredData)
     designers.value = [...new Set(filteredData.map(item => item.designerFullName))].sort();
     coordinators.value = [...new Set(filteredData.map(item => item.coordinatorFullName))].sort();
@@ -214,12 +215,12 @@ async function loadData(status: TaskStatus) {
 }
 
 async function filterByDesigners(data: GasconnectionQuery[]) {
-  if(selectedDisplayByOwnership.value.value === "MINE") {
-    const designerId:number = authenticationStore.getUserDesignerId
+  if (selectedDisplayByOwnership.value.value === "MINE") {
+    const designerId: number = authenticationStore.getUserDesignerId
     return data.filter(value => value.idDesigner === designerId)
   }
 
-  if(selectedDisplayByOwnership.value.value === "COMPANY") {
+  if (selectedDisplayByOwnership.value.value === "COMPANY") {
     let designerInCompany = await designerStore.getDesignerInCompany({name: "ALL", viewName: ""});
     let designerIds = designerInCompany.map(value => value.id);
     return data.filter(value => designerIds.includes(value.idDesigner))
@@ -240,8 +241,8 @@ const mapdates = (data: GasconnectionQuery[]) => {
     item.zudpReceiptDate = changeDate(item.zudpReceiptDate)
     item.utilityCompanySubmissionDate = changeDate(item.utilityCompanySubmissionDate)
     item.utilityCompanyReceiptDate = changeDate(item.utilityCompanyReceiptDate)
-    item.agreementSubmissionDate = changeDate(item.agreementSubmissionDate)
-    item.agreementReceiptDate = changeDate(item.agreementReceiptDate)
+    item.wsgAgreementSubmissionDate = changeDate(item.wsgAgreementSubmissionDate)
+    item.wsgAgreementReceiptDate = changeDate(item.wsgAgreementReceiptDate)
     item.substationNotificationSubmissionDate = changeDate(item.substationNotificationSubmissionDate)
     item.realizationStartDate = changeDate(item.realizationStartDate)
     item.realizationEndDate = changeDate(item.realizationEndDate)
@@ -292,8 +293,10 @@ function getSortOrder() {
 
 //display status
 
-const selectedDisplay = ref<TaskStatus>({name: 'NOT_FINISHED',
-  viewName: 'Niezrealizowane',})
+const selectedDisplay = ref<TaskStatus>({
+  name: 'NOT_FINISHED',
+  viewName: 'Niezrealizowane',
+})
 const displayOption = ref<TaskStatus[]>([
   {
     name: 'ALL',
@@ -304,42 +307,49 @@ const displayOption = ref<TaskStatus[]>([
     viewName: 'Niezrealizowane',
   },
 ]);
+
 function onStatusChange() {
   loadData(selectedDisplay.value)
 }
+
 function updateDisplayByStatus() {
-  let status  = settingStore.settings.gasConnectionSettings.displayStatusDesign;
+  let status = settingStore.settings.gasConnectionSettings.displayStatusDesign;
   selectedDisplay.value = UtilsService.getStatus(status)
 }
+
 // designer
 const displayByOwnership = ref([
-  { name: 'Tylko moje', value: "MINE", constant: !authenticationStore.isDesignerOrAdmin },
-  { name: 'Progas', value: "COMPANY", constant: !authenticationStore.isEmployeeOrAdmin },
-  { name: 'Wszystkie', value: "ALL", constant: !authenticationStore.isEmployeeOrAdmin }
+  {name: 'Tylko moje', value: "MINE", constant: !authenticationStore.isDesigner},
+  {name: 'Progas', value: "COMPANY", constant: !authenticationStore.hasAccessTasksGasConnectionDesignReadAll},
+  {name: 'Wszystkie', value: "ALL", constant: !authenticationStore.hasAccessTasksGasConnectionDesignReadAll}
 ]);
 const selectedDisplayByOwnership = ref(displayByOwnership.value[0]);
+
 function updateDisplayByDesigners() {
   let status = settingStore.settings.gasConnectionSettings.displayByOwnershipDesign;
-   let find = displayByOwnership.value.find(item => item.value === status);
-   if (find)
-     selectedDisplayByOwnership.value = find;
+  let find = displayByOwnership.value.find(item => item.value === status);
+  if (find)
+    selectedDisplayByOwnership.value = find;
 }
-watch(selectedDisplayByOwnership,(newValue, oldValue)=>{
+
+watch(selectedDisplayByOwnership, (newValue, oldValue) => {
   if (newValue === null) {
-    selectedDisplayByOwnership.value=oldValue
+    selectedDisplayByOwnership.value = oldValue
   }
 })
-function displayByDesignersChange(newValue: any){
+
+function displayByDesignersChange(newValue: any) {
   if (newValue.value !== null) {
     loadData(UtilsService.getStatus(getKey(selectedDisplay.value)))
   }
 }
-function getKey(key:any) {
-    return `${key}`;
-  }
+
+function getKey(key: any) {
+  return `${key}`;
+}
 
 //settings
-const showSettings = ref(false);
+const showSettings = ref<boolean>(false);
 
 async function saveSettings(gasConnectionSettings: GasConnectionSettings) {
   if (gasConnectionSettings) {
@@ -367,7 +377,7 @@ async function saveSettings(gasConnectionSettings: GasConnectionSettings) {
 const showDetailsDialog = ref<boolean>(false);
 const onRowSelect = (event: any) => {
   console.log("onRowSelected()", event);
-  showDetailsDialog.value=true;
+  showDetailsDialog.value = true;
   // contextMenuRef.value.show(event.originalEvent);
 };
 
@@ -388,6 +398,7 @@ const menuModel = computed(() => {
     items.push({
       label: 'Zablokuj wiersz',
       icon: 'pi pi-fw pi-lock',
+      disabled: lockedGasConnection.value.length >= 1,
       command: () => toggleLock(selectedGasConnection.value, false, selectedGasConnectionIndex.value)
     });
   }
@@ -409,10 +420,16 @@ const lockedGasConnection = ref<GasconnectionQuery[]>([]);
 const toggleLock = (data: GasconnectionQuery | undefined, frozen: boolean, index: number | undefined) => {
   if (data) {
     if (frozen) {
-      lockedGasConnection.value = lockedGasConnection.value.filter((c, i) => {void c;  return i !== index});
+      lockedGasConnection.value = lockedGasConnection.value.filter((c, i) => {
+        void c;
+        return i !== index
+      });
       gasConnections.value.push(data);
     } else {
-      customers.value = customers.value.filter((c, i) => {void c;  return i !== index});
+      gasConnections.value = gasConnections.value.filter((c, i) => {
+        void c;
+        return i !== index
+      });
       lockedGasConnection.value.push(data);
     }
   }
@@ -427,56 +444,77 @@ const onFilter = (event: any) => {
 //row style
 const rowStyle = (data: GasconnectionQuery) => {
   if (data.isFinished) {
-    return {backgroundColor: settingStore.settings.gasConnectionSettings.colorCompleted};
-    // return { backgroundColor: 'bold', fontStyle: 'italic' };
+    return {
+      backgroundColor: settingStore.settings.gasConnectionSettings.colorCompleted,
+      color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorCompleted)
+    };
   } else {
     //ready to FV
-    if(data.wsgFinalAcceptanceDate !== "" )
-      return {backgroundColor: settingStore.settings.gasConnectionSettings.colorFvReady};
-
+    if (data.wsgFinalAcceptanceDate !== "")
+      return {
+        backgroundColor: settingStore.settings.gasConnectionSettings.colorFvReady,
+        color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorFvReady)
+      };
 
     //overdue
     if (moment().diff(data.projectDeadline, 'days') > 0)
-      return {backgroundColor: settingStore.settings.gasConnectionSettings.colorOverdue};
+      return {
+        backgroundColor: settingStore.settings.gasConnectionSettings.colorOverdue,
+        color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorOverdue)
+      };
 
     //before deadline
     const daysBefore = settingStore.settings.gasConnectionSettings.daysBeforeProjectDeadline;
     const calculatedDays = moment(data.projectDeadline).diff(moment(), 'days')
     if (calculatedDays <= daysBefore && calculatedDays > 0) {
-      return {backgroundColor: settingStore.settings.gasConnectionSettings.colorBeforeDeadline};
+      return {
+        backgroundColor: settingStore.settings.gasConnectionSettings.colorBeforeDeadline,
+        color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorBeforeDeadline)
+      };
     }
   }
 };
+
+//row class
+// const rowClass = (data: GasconnectionQuery) => {
+// return {
+//   'font-bold': lockedGasConnection.value.some((item) => item.idTask === data.idTask)
+// };
+// };
+
 //cell style
 const cellStyle = (data: GasconnectionQuery, column: string) => {
 
   // is invoiced
-  if(column === "contractNo" && data.isInvoice)
-  return {
-    backgroundColor: settingStore.settings.gasConnectionSettings.colorReceipt,
-    borderRadius: '3px'
-  };
-
-  //is build
-  if(column === "finishDeadline" && data.realizationEndDate)
+  if (column === "contractNo" && data.isInvoice)
     return {
       backgroundColor: settingStore.settings.gasConnectionSettings.colorReceipt,
-      borderRadius: '3px'
+      borderRadius: '3px',
+      color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorReceipt)
+    };
+
+  //is build
+  if (column === "finishDeadline" && data.realizationEndDate)
+    return {
+      backgroundColor: settingStore.settings.gasConnectionSettings.colorReceipt,
+      borderRadius: '3px',
+      color: UtilsService.getContrastTextColor(settingStore.settings.gasConnectionSettings.colorReceipt)
     };
 }
 //cell style
 const cellClass = (data: GasconnectionQuery, column: string) => {
-  if (data.withoutTrafficOrganizationProject && (column === 'trafficOrganizationProjectSubmissionDate' || column ==='trafficOrganizationProjectReceiptDate'))
+  if (data.withoutTrafficOrganizationProject && (column === 'trafficOrganizationProjectSubmissionDate' || column === 'trafficOrganizationProjectReceiptDate'))
     return "disable-column w-full h-full"
 }
-
 </script>
 
 <template>
   <TheMenuTasks/>
-  <h2 class="color-yellow flex justify-content-center mt-3">Lista przyłączy - projekt</h2>
+  <h2 class="flex justify-center mt-3">Lista przyłączy - projekt </h2>
   <GasConnectionSettingDialog v-model:visible="showSettings" @save="saveSettings" @cancel="showSettings=false"/>
-  <GasConnectiomDetailsDesignDialog v-model:visible="showDetailsDialog" :gas-connection-id="selectedGasConnection?.idTask" />
+  <GasConnectiomDetailsDesignDialog v-model:visible="showDetailsDialog"
+                                    :gas-connection-id="selectedGasConnection?.idTask" @cancel="showDetailsDialog=false"
+                                    @hide="selectedGasConnection = undefined"/>
   <div class="card mt-2">
     <ContextMenu ref="contextMenuRef" :model="menuModel" @hide="selectedGasConnection = undefined"/>
     <DataTable ref="dataTableRef" v-model:filters="filters"
@@ -497,24 +535,25 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                :globalFilterFields="['designerFullName', 'coordinatorFullName', 'customerFullName', 'commune', 'city', 'street', 'taskNo', 'conditionNo', 'contractNo', 'customerPhone','connectionAgreementNumber','sapUpNo']"
                @filter="onFilter"
                showGridlines
-               :frozenValue="lockedGasConnection"
                :loading="gasConnectionQueryStore.loadingGasConnectionQuery"
                resizable-columns
                column-resize-mode="expand"
+               :frozenValue="lockedGasConnection"
                :rowStyle="rowStyle"
     >
       <template #header>
-        <div class="flex justify-content-between ">
+        <div class="flex justify-between ">
           <Button type="button" icon="pi pi-filter-slash" label="Wyczyść" outlined @click="clearFilter()"/>
           <div class="flex flex-row gap-2">
             <Select v-model="selectedDisplay"
-                        @change="onStatusChange"
-                        :options="displayOption"
+                    @change="onStatusChange"
+                    :options="displayOption"
                     optionLabel="viewName"
-                        placeholder="Wybierz status"
-                        class="md:w-20rem w-full"/>
+                    placeholder="Wybierz status"
+                    class="md:w-20rem w-full"/>
           </div>
-          <SelectButton v-model="selectedDisplayByOwnership" :options="displayByOwnership" optionDisabled="constant" optionLabel="name" @change="displayByDesignersChange"/>
+          <SelectButton v-model="selectedDisplayByOwnership" :options="displayByOwnership" optionDisabled="constant"
+                        optionLabel="name" @change="displayByDesignersChange"/>
           <div class="flex flex-row gap-2">
             <IconField iconPosition="left">
               <InputIcon>
@@ -540,16 +579,12 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
             }"
               :frozen="col.frozen"
               :align-frozen="'left'"
-     >
-        <!--              :style="{ width: col.type === 'date' ? '200px' : '300px' }"-->
-
-        <!--              :style="{ minWidth: col.type === 'multiselect' ? '300px' : '100px' }"-->
+      >
 
         <!-- DATA  -->
         <template v-if="col.type === 'date'" #body="{ data }">
-<!--          <div :style="columnStyle(data, col.field)">-->
           <div :style="cellStyle(data, col.field)" :class="cellClass(data, col.field)">
-                      <span class="flex justify-content-center">&nbsp{{  UtilsService.formatDate(data[col.field]) }}</span>
+            <span class="flex justify-center">&nbsp{{ UtilsService.formatDate(data[col.field]) }}</span>
           </div>
         </template>
         <template v-if="col.type==='date'" #filter="{ filterModel }">
@@ -557,8 +592,8 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
         </template>
 
         <!-- NUMERIC  -->
-        <template v-if="col.type==='numeric'" #body="{ data }">
-          <span class="flex justify-content-center"> {{ UtilsService.formatCurrency(data[col.field]) }} </span>
+        <template v-if="col.type==='numeric'" #body="slotProps">
+          <span class="flex justify-center"> {{ UtilsService.formatCurrency(slotProps.data[col.field]) }} </span>
 
         </template>
         <template v-if="col.type==='numeric'" #filter="{ filterModel }">
@@ -566,17 +601,17 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
         </template>
 
         <!-- TEXT  -->
-        <template v-if="col.type==='text'" #body="{ data }">
-          <span class="flex justify-content-center"> {{ data[col.field] }} </span>
+        <template v-if="col.type==='text'" #body="slotProps">
+          <span class="flex justify-center"> {{ slotProps.data[col.field] }} </span>
         </template>
         <template v-if="col.type==='text'" #filter="{ filterModel }">
-          <InputText v-model="filterModel.value" type="text" class="p-column-filter flex justify-content-center"
+          <InputText v-model="filterModel.value" type="text" class="p-column-filter flex justify-center"
                      placeholder="Wpisz tutaj..."/>
         </template>
 
         <!-- MULTISELECT DESIGNERS -->
         <template v-if="col.type==='multiselect' && col.options==='designers'" #body="{ data }">
-          <span class="flex justify-content-center"> {{ data[col.field] }}</span>
+          <span class="flex justify-center"> {{ data[col.field] }}</span>
         </template>
         <template v-if="col.type==='multiselect' && col.options==='designers'" #filter="{ filterModel }">
           <MultiSelect v-model="filterModel.value"
@@ -589,7 +624,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
 
         <!-- MULTISELECT COORDINATORS -->
         <template v-if="col.type==='multiselect' && col.options==='coordinators'" #body="{ data }">
-          <span class="flex justify-content-center">{{ data[col.field] }}</span>
+          <span class="flex justify-center">{{ data[col.field] }}</span>
         </template>
         <template v-if="col.type==='multiselect' && col.options==='coordinators'" #filter="{ filterModel }">
           <MultiSelect v-model="filterModel.value"
@@ -602,7 +637,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
 
         <!-- MULTISELECT CUSTOMERS -->
         <template v-if="col.type==='multiselect' && col.options==='customers'" #body="{ data }">
-          <span class="flex justify-content-center"> {{ data[col.field] }} </span>
+          <span class="flex justify-center"> {{ data[col.field] }} </span>
         </template>
         <template v-if="col.type==='multiselect' && col.options==='customers'" #filter="{ filterModel }">
           <MultiSelect v-model="filterModel.value"
@@ -615,7 +650,8 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
 
         <!-- TAG  STAGES-->
         <template #body="{ data }">
-          <Tag class="flex justify-content-center" :value="UtilsService.getStageAsString(data.stage)" :style="UtilsService.getStageTagStyle(data[col.field])"/>
+          <Tag class="flex justify-center w-full" :value="UtilsService.getStageAsString(data.stage)"
+               :style="UtilsService.getStyleByStage(data[col.field])"/>
         </template>
         <template #filter="{ filterModel }">
           <MultiSelect v-model="filterModel.value"
@@ -626,13 +662,14 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
                        :max-selected-labels="4"
           >
             <template #option="slotProps">
-              <Tag :value="UtilsService.getStageAsString(slotProps.option.value)" :style="UtilsService.getStageTagStyle(slotProps.option.value)"/>
+              <Tag :value="UtilsService.getStageAsString(slotProps.option.value)"
+                   :style="UtilsService.getStyleByStage(slotProps.option.value)"/>
             </template>
           </MultiSelect>
         </template>
       </Column>
       <template #footer>
-        <span class="flex justify-content-end">Ilość pozycji: {{ rowCounter }}</span>
+        <span class="flex justify-end mr-4">Ilość pozycji: {{ rowCounter }}</span>
       </template>
     </DataTable>
   </div>
@@ -647,6 +684,7 @@ const cellClass = (data: GasconnectionQuery, column: string) => {
   padding: .2rem 0.2rem;
   border-radius: 3px;
 }
+
 .disable-column {
   background-color: gray !important;
   width: max-content;

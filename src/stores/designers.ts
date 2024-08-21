@@ -1,15 +1,18 @@
 import {defineStore} from "pinia";
 import httpCommon from "../http-common";
 import {ErrorService} from "../service/ErrorService";
-import {Designer} from "@/types/Designer.ts";
+import {Designer, DesignerTraffic} from "@/types/Designer.ts";
 import {ActiveStatus} from "@/types/Enums.ts";
 
 export const useDesignerStore = defineStore("designer", {
     state: () => ({
         loadingDesigners: false,
+        loadingDesignersTraffic: false,
 
         designers: [] as Designer[],
+        designersTraffic: [] as DesignerTraffic[],
         designersCached: [] as Designer[],
+        designersTrafficCached: [] as DesignerTraffic[],
     }),
 
     //getters = computed
@@ -49,10 +52,15 @@ export const useDesignerStore = defineStore("designer", {
             this.getDesignersByStatusFromDb({name:"ALL",viewName:""})
                 .then(value => this.designersCached=value)
         },
+        refreshDesignerTrafficCache(){
+            this.getDesignersTrafficByStatusFromDb({name:"ALL",viewName:""})
+                .then(value => this.designersTrafficCached=value)
+        },
 
         //----------------------------------DATABASE-----------------------
         //
         //
+        // DESIGNERS
         async getDesignersByStatusFromDb(status: ActiveStatus): Promise<Designer[]> {
             console.log("START - getDesignersByStatusFromDb()");
             this.loadingDesigners = true;
@@ -71,7 +79,29 @@ export const useDesignerStore = defineStore("designer", {
                 return []
             } finally {
                 this.loadingDesigners = false;
-                console.log("END - getGasConnectionQueriesByCompleteFromDb()");
+                console.log("END - getDesignersByStatusFromDb()");
+            }
+        },
+        //TRAFFIC DESIGNERS
+        async getDesignersTrafficByStatusFromDb(status: ActiveStatus): Promise<DesignerTraffic[]> {
+            console.log("START - getDesignersTrafficByStatusFromDb()");
+            this.loadingDesignersTraffic = true;
+
+            try {
+                const response = await httpCommon.get(`/v1/designer/traffic?status=` + status.name);
+                console.log("getDesignersTrafficByStatusFromDb() - Ilosc[]: " + response.data.length);
+                return response.data;
+            } catch (e) {
+                if (ErrorService.isAxiosError(e)) {
+                    console.log("ERROR getDesignersTrafficByStatusFromDb(): ", e);
+                    ErrorService.validateError(e);
+                } else {
+                    console.log("An unexpected error occurred: ", e);
+                }
+                return []
+            } finally {
+                this.loadingDesignersTraffic = false;
+                console.log("END - getDesignersTrafficByStatusFromDb()");
             }
         },
     },

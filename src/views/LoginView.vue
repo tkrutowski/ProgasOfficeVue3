@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import {onMounted, ref} from "vue";
+import router from "@/router";
 import {useAuthorizationStore} from "../stores/authorization";
 import {useDesignerStore} from "@/stores/designers.ts";
-import {onMounted, ref} from "vue";
+import {useSettingStore} from "@/stores/setting.ts";
 import OfficeButton from "../components/OfficeButton.vue";
 
 const authorizationStore = useAuthorizationStore();
 const designerStore = useDesignerStore();
-import {useSettingStore} from "@/stores/setting.ts";
-import router from "@/router";
 
 const settingStore = useSettingStore();
 const username = ref<string>("");
@@ -24,6 +24,7 @@ async function login() {
   if (result) {
     await settingStore.getSettingsFromDb()
     designerStore.refreshDesignerCache()
+    designerStore.refreshDesignerTrafficCache()
     // router.back();
     goBack()
   }
@@ -47,17 +48,18 @@ function goBack(): void {
 </script>
 <template>
   <form
-      class="login-form mb-5 mt-1 mt-md-5"
+      class="login-form  mt-1 mt-md-5"
       @submit.prevent="login()"
   >
-    <h2 class="mb-5 mt-5 color-yellow text-center">Logowanie</h2>
+    <h2 class="mb-5 mt-5 text-center font-bold text-color!important" >Logowanie</h2>
 
     <!-- ERROR -->
     <div v-if="authorizationStore.loginError">
       <p id="error">Niestety podałeś niewłaściwy login lub hasło.</p>
     </div>
 
-    <FloatLabel>
+    <!-- USERNAME -->
+    <FloatLabel class="">
       <InputText
           id="username"
           v-model="username"
@@ -69,12 +71,12 @@ function goBack(): void {
     </FloatLabel>
 
     <!-- PASSWORD -->
-    <FloatLabel class="mt-5">
+    <FloatLabel class="mt-9">
       <Password v-model="password"
                 toggleMask
                 required
                 id="password"
-                class="w-full"
+                class="w-full text-yellow-400"
                 autocomplete="current-password"
                 :inputStyle="{'width':'100%'}"
                 :feedback="false"
@@ -111,17 +113,17 @@ function goBack(): void {
 
 /* unvisited link */
 .link:link {
-  color: #a29a8e;
+  color: var(--text-color);
 }
 
 /* visited link */
 .link:visited {
-  color: #a29a8e;
+  color: var(--text-color);
 }
 
 /* mouse over link */
 .link:hover {
-  color: rgba(255, 245, 0, .7);
+  color: var(--body-text-color)!important;
   text-decoration: none;
 }
 
@@ -129,5 +131,7 @@ function goBack(): void {
   max-width: 400px;
   margin: auto;
   margin-top: 200px;
+
 }
+
 </style>
