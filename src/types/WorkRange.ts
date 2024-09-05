@@ -9,7 +9,6 @@ export interface WorkRangeGasStation {
     info: string;
     capacity: number;
     amount: number;
-    lengthProj: number;
     stationType: GasStationType;
 }
 
@@ -25,4 +24,21 @@ export interface WorkRangeGasConnection {
     lengthProj: number;
     gasCabinetProviderType: GasCabinetProviderType;
     gasCabinetPickupDate: undefined | Date;
+}
+
+export interface WorkRangeConnection {
+    id:number
+    idTask: number;
+    taskType: TaskType | undefined;
+    info: string;
+    diameter: number | undefined
+    material: string | undefined
+    pressure: GasPressureType | undefined;
+}
+
+type PressureType = "MEDIUM" | "LOW" | "HIGH" ;
+export interface GasPressureType {
+    name: PressureType;
+    viewValue: string;
+    displayValue: string;
 }

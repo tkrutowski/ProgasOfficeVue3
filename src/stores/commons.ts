@@ -2,6 +2,7 @@ import {defineStore} from "pinia";
 import httpCommon from "../http-common";
 import {ErrorService} from "../service/ErrorService";
 import {UtilityCompanyType} from "@/types/Commons.ts";
+import {GasPressureType} from "@/types/WorkRange.ts";
 
 export const useCommonStore = defineStore("common", {
     state: () => ({
@@ -22,7 +23,27 @@ export const useCommonStore = defineStore("common", {
             this.getUtilityCompanyTypeFromDb()
                 .then(value => this.utilityCompanyTypes=value)
         },
-
+        getPressureTypes():GasPressureType[]{
+            return [{
+                "name": "LOW",
+                "viewValue": "niskie",
+                "displayValue": "niskie"
+            },
+                {
+                    "name": "MEDIUM",
+                    "viewValue": "srednie",
+                    "displayValue": "średnie"
+                },
+                {
+                    "name": "HIGH",
+                    "viewValue": "wysokie",
+                    "displayValue": "wysokie"
+                }];
+        },
+        getDiameters():number[]{
+            return [25,32,40,50,63,75,80,90,100,110,125,140,150,160,180,200,225,250,280,315,350,400,450,500];
+        },
+        getMaterials():string[]{return ['PE','stal']},
         //----------------------------------DATABASE-----------------------
         //
         //

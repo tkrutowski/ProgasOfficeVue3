@@ -2,6 +2,9 @@
 import {useSettingStore} from "@/stores/setting.ts";
 import {useGasConnections} from "@/stores/gasConnections.ts";
 import {useDesignerStore} from "@/stores/designers.ts";
+import {useSurveyorStore} from "@/stores/surveyors.ts";
+import {useCommonStore} from "@/stores/commons.ts";
+import {useDialog} from "primevue/usedialog";
 import OfficeButton from "@/components/OfficeButton.vue";
 import {computed, onMounted, ref, watch} from "vue";
 import Tabs from 'primevue/tabs';
@@ -12,11 +15,11 @@ import TabPanel from 'primevue/tabpanel';
 import {GasConnection} from "@/types/GasConnection.ts";
 import {UtilsService} from "@/service/UtilsService.ts";
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
-import {useSurveyorStore} from "@/stores/surveyors.ts";
-import {useCommonStore} from "@/stores/commons.ts";
 import {Surveyor} from "@/types/Surveyor.ts";
 import {Plot, PlotOwnerPrivate} from "@/types/Plot.ts";
+import BasicInfoDialog from "@/components/BasicInfoDialog.vue";
 
+const dialog = useDialog();
 const designerStore = useDesignerStore();
 const commonStore = useCommonStore();
 const surveyorStore = useSurveyorStore();
@@ -24,7 +27,7 @@ const settingStore = useSettingStore();
 const gasConnectionStore = useGasConnections();
 const gasConnection = ref<GasConnection>({
   plots: [],
-  stage: {name:"LACK", value:-1,viewValue:""},
+  stage: {name: "LACK", value: -1, viewValue: ""},
   accelerationDate: undefined,
   address: undefined,
   conditionDate: undefined,
@@ -39,29 +42,14 @@ const gasConnection = ref<GasConnection>({
   finishDeadline: undefined,
   workRangeGasConnections: [],
   workRangeGasStations: [],
-  pgn: {
-    id:0,
-    applicationNumber:"",
-    idTask:0,
-    pgnNumber:"",
-    taskType: {name:"GAS_CONNECTION", viewName:"przylacze"},
-    info:"",
-    recipient:"",
-    workDate: undefined,
-  },
-  gasConnectionBuild: {
-    substationNotificationSubmissionDate: undefined,
-    surveyingSketchesDate: undefined,
-    surveyingInventoryDate: undefined,
-    realizationStartDate: undefined,
-    realizationEndDate: undefined,
-    wsgTechnicalAcceptanceDate: undefined,
-    wsgFinalAcceptanceSubmissionDate: undefined,
-    wsgFinalAcceptanceDate: undefined,
-    gasConnectionRealLength: 0,
-    technicalAcceptanceProtocolNo: "",
-    gasPipelineInventoryNumber: "",
-    wsgInfo: ""
+  workRangeConnection: {
+    diameter: undefined,
+    idTask: 0,
+    info: "",
+    id: 0,
+    material: undefined,
+    pressure: undefined,
+    taskType: undefined
   },
   gasConnectionDesign: {
     projectOrderSubmissionDate: undefined,
@@ -102,6 +90,39 @@ const gasConnection = ref<GasConnection>({
     gasPointOrderNo: "",
     zudpSentToSurveyorDate: undefined,
     surveyorTrafficProject: null,
+  },
+  gasConnectionBuild: {
+    substationNotificationSubmissionDate: undefined,
+    surveyingSketchesDate: undefined,
+    surveyingInventoryDate: undefined,
+    realizationStartDate: undefined,
+    realizationEndDate: undefined,
+    wsgTechnicalAcceptanceDate: undefined,
+    wsgFinalAcceptanceSubmissionDate: undefined,
+    wsgFinalAcceptanceDate: undefined,
+    gasConnectionRealLength: 0,
+    technicalAcceptanceProtocolNo: "",
+    gasPipelineInventoryNumber: "",
+    wsgInfo: ""
+  },
+  pgn: {
+    id: 0,
+    applicationNumber: "",
+    idTask: 0,
+    pgnNumber: "",
+    taskType: {name: "GAS_CONNECTION", viewName: "przylacze"},
+    info: "",
+    recipient: "",
+    workDate: undefined,
+  },
+  gasConnectionFinance: {
+    financeInventoryAmount: 0,
+    financeInventoryDate: undefined,
+    financeProjectAmount: 0,
+    financeProjectDate: undefined,
+    financeRoadPastureAmount: 0,
+    financeRoadPastureDate: undefined,
+    costList: []
   },
   idGasConnectionSync: false,
   idTask: 0,
@@ -264,6 +285,64 @@ const rectangleStyle = computed(() => ({
   border: '1px solid #f5d3b3' /* Obwódka */
 }));
 
+//--------------------------INFO
+const showCustomerInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły klienta',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.customer?.firstName,
+      lastName: gasConnection.value.customer?.name,
+      address: `${gasConnection.value.customer?.street}, ${gasConnection.value.customer?.zip} ${gasConnection.value.customer?.city}`,
+      nip: gasConnection.value.customer?.nip,
+      phone: gasConnection.value.customer?.phone,
+      // phone2: gasConnection.value.customer?.phone,
+      mail: gasConnection.value.customer?.mail
+    }
+  });
+}
+const showDesignerInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły projektanta',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.designer?.name,
+      lastName: gasConnection.value.designer?.lastName,
+      address: `${gasConnection.value.designer?.street}, ${gasConnection.value.designer?.zip} ${gasConnection.value.designer?.city}`,
+      phone: gasConnection.value.designer?.phone,
+      phone2: gasConnection.value.designer?.phone2,
+      mail: gasConnection.value.designer?.mail
+    }
+  });
+}
+const showCoordinatorInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły koordynatora',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.coordinator?.name,
+      lastName: gasConnection.value.coordinator?.lastName,
+      phone: gasConnection.value.coordinator?.phone,
+      mail: gasConnection.value.coordinator?.mail
+    }
+  });
+}
+
 onMounted(() => {
   console.log('MOUNTED: GasConnectionDetailsDesignDialog');
   if (settingStore.settings.userId === 0) settingStore.getSettingsFromDb();
@@ -291,10 +370,21 @@ onMounted(() => {
 
             <Fieldset legend="Szczegóły przyłącza" class="w-full">
               <div class="card">
-                <!--            <div class="field col">-->
-                <!--            TODO dodać tooltip z danymi klienta albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Klient:</small><span
-                    class="right-side"> {{ gasConnection.customer?.name }}</span></p>
+                    class="right-side"> {{ gasConnection.customer?.name }} {{ gasConnection.customer?.firstName }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showCustomerInfo"/>
+                  <Button
+                      v-if="gasConnection.customer?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.customer.mail)"/>
+                </span></p>
                 <p class="m-0"><small class="left-side">Gmina:</small><span
                     class="right-side"> {{ gasConnection.address?.commune }}</span></p>
                 <p class="m-0"><small class="left-side">Miasto:</small><span
@@ -311,21 +401,40 @@ onMounted(() => {
                     class="right-side"> {{ gasConnection.projectDeadline }}</span></p>
                 <p class="m-0"><small class="left-side">Termin odb. tech.:</small><span
                     class="right-side"> {{ gasConnection.finishDeadline }}</span></p>
-                <!--            TODO dodać tooltip z danymi projektanta albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Projektant:</small><span
-                    class="right-side"> {{ gasConnection.designer?.name }} {{ gasConnection.designer?.lastName }}</span>
+                    class="right-side"> {{ gasConnection.designer?.name }} {{ gasConnection.designer?.lastName }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showDesignerInfo"/>
+                  <Button
+                      v-if="gasConnection.designer?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.designer.mail)"/>
+                </span>
                 </p>
-                <!--            TODO dodać tooltip z danymi koordynatora albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Koordynator:</small> <span
                     class="right-side"> {{ gasConnection.coordinator?.name }} {{
                     gasConnection.coordinator?.lastName
-                  }}</span>
+                  }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showCoordinatorInfo"/>
+                  <Button
+                      v-if="gasConnection.coordinator?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.coordinator.mail)"/>
+                </span>
                 </p>
-                <!--            TODO po dodaniu  tooltipa lub  btn z modalem można usunąć-->
-                <p class="m-0"><small class="left-side">Tel do klienta:</small><span
-                    class="right-side">{{ gasConnection.customer?.phone }}</span></p>
-                <p class="m-0"><small class="left-side">Mail do klienta:</small><span
-                    class="right-side">{{ gasConnection.customer?.mail }}</span></p>
                 <p class="m-0"><small class="left-side">Wartość projektu:</small> <span
                     class="right-side">{{ UtilsService.formatCurrency(gasConnection.projectValue) }}</span></p>
                 <p class="m-0"><small class="left-side">Wartość wykonawstwa:</small><span
@@ -826,6 +935,7 @@ onMounted(() => {
 
 .right-side {
   font-weight: 700 !important;
+  font-size: .9rem !important;
 
 }
 

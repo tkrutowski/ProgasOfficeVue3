@@ -24,6 +24,10 @@ export const UtilsService = {
         return (result === "0001-01-01" || result === "Invalid date") ? "" : result;
     },
 
+    calculatePercentagePaid(amountPaid: number, totalInvoiceAmount: number) {
+    return (amountPaid / totalInvoiceAmount) * 100;
+},
+
    isAllFilled(values: (Date | string | undefined)[]): boolean {
     return values.every(value => {
         if (value instanceof Date) {
@@ -306,6 +310,13 @@ export const UtilsService = {
         } else {
             return {name: "LACK", value: -1};
         }
+    },
+
+    sendMail(email:string):void{
+    // sendMail(email:string, subject: string, body:string):void{
+        console.log(`Sending mail to ${email}`);
+        window.location.href = `mailto:${email}`;
+        // window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
 
 };

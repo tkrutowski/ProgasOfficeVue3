@@ -2,6 +2,8 @@
 import {useSettingStore} from "@/stores/setting.ts";
 import {useGasConnections} from "@/stores/gasConnections.ts";
 import {useDesignerStore} from "@/stores/designers.ts";
+import {useAuthorizationStore} from "@/stores/authorization.ts";
+import {useInvoiceStore} from "@/stores/invoices.ts";
 import OfficeButton from "@/components/OfficeButton.vue";
 import {computed, onMounted, ref, watch} from "vue";
 import Tabs from 'primevue/tabs';
@@ -9,23 +11,30 @@ import TabList from 'primevue/tablist';
 import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
-import {GasConnection} from "@/types/GasConnection.ts";
+import {Cost, GasConnection} from "@/types/GasConnection.ts";
 import {UtilsService} from "@/service/UtilsService.ts";
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
 import {useSurveyorStore} from "@/stores/surveyors.ts";
 import {useCommonStore} from "@/stores/commons.ts";
+import {useDialog} from 'primevue/usedialog';
 import {Surveyor} from "@/types/Surveyor.ts";
 import {Plot, PlotOwnerPrivate} from "@/types/Plot.ts";
 import {DesignerTraffic} from "@/types/Designer.ts";
+import {Invoice} from "@/types/Invoice.ts";
+import {InvoiceCorrection} from "@/types/InvoiceCorrection.ts";
+import BasicInfoDialog from "@/components/BasicInfoDialog.vue";
 
+const dialog = useDialog();
 const designerStore = useDesignerStore();
 const commonStore = useCommonStore();
 const surveyorStore = useSurveyorStore();
 const settingStore = useSettingStore();
 const gasConnectionStore = useGasConnections();
+const invoiceStore = useInvoiceStore();
+const authStore = useAuthorizationStore();
 const gasConnection = ref<GasConnection>({
   plots: [],
-  stage: {name:"LACK", value:-1,viewValue:""},
+  stage: {name: "LACK", value: -1, viewValue: ""},
   accelerationDate: undefined,
   address: undefined,
   conditionDate: undefined,
@@ -40,6 +49,15 @@ const gasConnection = ref<GasConnection>({
   finishDeadline: undefined,
   workRangeGasConnections: [],
   workRangeGasStations: [],
+  workRangeConnection: {
+    diameter: undefined,
+    idTask: 0,
+    info: "",
+    id: 0,
+    material: undefined,
+    pressure: undefined,
+    taskType: undefined
+  },
   gasConnectionDesign: {
     projectOrderSubmissionDate: undefined,
     projectOrderConfirmationDate: undefined,
@@ -95,14 +113,23 @@ const gasConnection = ref<GasConnection>({
     wsgInfo: ""
   },
   pgn: {
-    id:0,
-    applicationNumber:"",
-    idTask:0,
-    pgnNumber:"",
-    taskType: {name:"GAS_CONNECTION", viewName:"przylacze"},
-    info:"",
-    recipient:"",
+    id: 0,
+    applicationNumber: "",
+    idTask: 0,
+    pgnNumber: "",
+    taskType: {name: "GAS_CONNECTION", viewName: "przylacze"},
+    info: "",
+    recipient: "",
     workDate: undefined,
+  },
+  gasConnectionFinance: {
+    financeInventoryAmount: 0,
+    financeInventoryDate: undefined,
+    financeProjectAmount: 0,
+    financeProjectDate: undefined,
+    financeRoadPastureAmount: 0,
+    financeRoadPastureDate: undefined,
+    costList: []
   },
   idGasConnectionSync: false,
   idTask: 0,
@@ -166,6 +193,19 @@ const loadGasConnection = async (id: number) => {
         submissionDate: undefined,
         taskType: {name: "GAS_CONNECTION", viewName: "Wszystkie"}
       };
+      if (authStore.hasAccessFinance) {
+        invoices.value = await invoiceStore.getInvoiceByTaskFromDb(id, {name: "GAS_CONNECTION", viewName: "przylacze"})
+        let correctionsList = await Promise.all(
+            invoices.value.map(fv =>
+                invoiceStore.getInvoiceCorrectionByInvoiceFromDb(fv.idInvoiceNumber, fv.idInvoiceYear)
+            )
+        );
+        correctionsList.forEach(correction => {
+          if (correction.length > 0) {  // Sprawdzenie, czy tablica nie jest pusta
+            invoices.value.push(...correction);  // Rozpakowuje elementy tablicy correction i dodaje je do invoices.value
+          }
+        });
+      }
     }
   }
 };
@@ -237,8 +277,8 @@ const cancel = () => {
   emit("cancel");
 };
 const save = () => {
-  if (gasConnection.value != null)
-    emit("save", gasConnection.value);
+//todo dodać submit
+  emit("save", gasConnection.value);
 }
 
 const mapDeliver = ref([
@@ -284,7 +324,85 @@ const getSurveyorTrafficProjectStyle = (style: string, date: Date | undefined, s
     return null;
 }
 
-onMounted(() => {
+//------------------------------------------------- FINANCE
+const invoices = ref<(Invoice | InvoiceCorrection)[]>([]);
+const selectedCosts = ref<Cost[]>([]);
+
+const amountTotal = computed(() => {
+  let total = 0;
+  for (let inv of invoices.value) {
+    total += inv.amountNet;
+  }
+
+  return UtilsService.formatCurrency(total);
+});
+const percentTotal = computed(() => {
+  let total = 0;
+  for (let inv of invoices.value) {
+    total += UtilsService.calculatePercentagePaid(inv.amountNet, gasConnection.value.taskValue);
+  }
+
+  return total;
+});
+
+//--------------------------INFO
+const showCustomerInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły klienta',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.customer?.firstName,
+      lastName: gasConnection.value.customer?.name,
+      address: `${gasConnection.value.customer?.street}, ${gasConnection.value.customer?.zip} ${gasConnection.value.customer?.city}`,
+      nip: gasConnection.value.customer?.nip,
+      phone: gasConnection.value.customer?.phone,
+      // phone2: gasConnection.value.customer?.phone,
+      mail: gasConnection.value.customer?.mail
+    }
+  });
+}
+const showDesignerInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły projektanta',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.designer?.name,
+      lastName: gasConnection.value.designer?.lastName,
+      address: `${gasConnection.value.designer?.street}, ${gasConnection.value.designer?.zip} ${gasConnection.value.designer?.city}`,
+      phone: gasConnection.value.designer?.phone,
+      phone2: gasConnection.value.designer?.phone2,
+      mail: gasConnection.value.designer?.mail
+    }
+  });
+}
+const showCoordinatorInfo = () => {
+  dialog.open(BasicInfoDialog, {
+    props: {
+      header: 'Szczegóły koordynatora',
+      style: {
+        width: '30rem',
+      },
+      modal: true
+    },
+    data: {
+      firstName: gasConnection.value.coordinator?.name,
+      lastName: gasConnection.value.coordinator?.lastName,
+      phone: gasConnection.value.coordinator?.phone,
+      mail: gasConnection.value.coordinator?.mail
+    }
+  });
+}
+onMounted(async () => {
   console.log('MOUNTED: GasConnectionDetailsDesignDialog');
   if (settingStore.settings.userId === 0) settingStore.getSettingsFromDb();
   if (surveyorStore.surveyorsCached.length === 0) surveyorStore.refreshSurveyorCache();
@@ -299,7 +417,7 @@ onMounted(() => {
       <div class="flex flex-row justify-between w-full ">
 
         <h2 class=" ml-5">
-          Sczegóły zadania
+          Szczegóły zadania
         </h2>
         <Button icon="pi pi-sync" outlined @click="loadGasConnection(gasConnectionId)"/>
       </div>
@@ -311,10 +429,22 @@ onMounted(() => {
 
             <Fieldset legend="Szczegóły przyłącza" class="w-full">
               <div class="card">
-                <!--            <div class="field col">-->
-                <!--            TODO dodać tooltip z danymi klienta albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Klient:</small><span
-                    class="right-side"> {{ gasConnection.customer?.name }}</span></p>
+                    class="right-side"> {{ gasConnection.customer?.name }} {{ gasConnection.customer?.firstName }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showCustomerInfo"/>
+                  <Button
+                      v-if="gasConnection.customer?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.customer.mail)"/>
+                </span></p>
+
                 <p class="m-0"><small class="left-side">Gmina:</small><span
                     class="right-side"> {{ gasConnection.address?.commune }}</span></p>
                 <p class="m-0"><small class="left-side">Miasto:</small><span
@@ -331,21 +461,40 @@ onMounted(() => {
                     class="right-side"> {{ gasConnection.projectDeadline }}</span></p>
                 <p class="m-0"><small class="left-side">Termin odb. tech.:</small><span
                     class="right-side"> {{ gasConnection.finishDeadline }}</span></p>
-                <!--            TODO dodać tooltip z danymi projektanta albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Projektant:</small><span
-                    class="right-side"> {{ gasConnection.designer?.name }} {{ gasConnection.designer?.lastName }}</span>
+                    class="right-side"> {{ gasConnection.designer?.name }} {{ gasConnection.designer?.lastName }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showDesignerInfo"/>
+                  <Button
+                      v-if="gasConnection.designer?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.designer.mail)"/>
+                </span>
                 </p>
-                <!--            TODO dodać tooltip z danymi koordynatora albo btn z modalem-->
                 <p class="m-0"><small class="left-side">Koordynator:</small> <span
                     class="right-side"> {{ gasConnection.coordinator?.name }} {{
                     gasConnection.coordinator?.lastName
-                  }}</span>
+                  }}
+                  <Button class="ml-2" icon="pi pi-exclamation-circle"
+                          style="max-width: 15px; max-height: 15px"
+                          raised rounded outlined
+                          v-tooltip.top="'Wyświetl szczegóły'"
+                          @click="showCoordinatorInfo"/>
+                  <Button
+                      v-if="gasConnection.coordinator?.mail"
+                      class="ml-2" icon="pi pi-envelope"
+                      style="max-width: 20px; max-height: 20px"
+                      outlined
+                      v-tooltip.top="'Wyślij maila'"
+                      @click="UtilsService.sendMail(gasConnection.coordinator.mail)"/>
+                </span>
                 </p>
-                <!--            TODO po dodaniu  tooltipa lub  btn z modalem można usunąć-->
-                <p class="m-0"><small class="left-side">Tel do klienta:</small><span
-                    class="right-side">{{ gasConnection.customer?.phone }}</span></p>
-                <p class="m-0"><small class="left-side">Mail do klienta:</small><span
-                    class="right-side">{{ gasConnection.customer?.mail }}</span></p>
                 <p class="m-0"><small class="left-side">Wartość projektu:</small> <span
                     class="right-side">{{ UtilsService.formatCurrency(gasConnection.projectValue) }}</span></p>
                 <p class="m-0"><small class="left-side">Wartość wykonawstwa:</small><span
@@ -373,6 +522,9 @@ onMounted(() => {
                 <Tab value="0">Projekt</Tab>
                 <Tab value="1">Działki</Tab>
                 <Tab value="2">Wykonawstwo</Tab>
+                <Tab value="3" v-if="authStore.hasAccessTasksGasConnectionFinance">Finanse - koszty</Tab>
+                <Tab value="4" v-if="authStore.hasAccessFinance">Finanse - faktury</Tab>
+                <Tab value="5">Zakres</Tab>
               </TabList>
               <TabPanels>
                 <TabPanel value="0">
@@ -390,7 +542,8 @@ onMounted(() => {
                       </template>
                       <div class="card flex flex-wrap gap-4">
                         <div class="flex-auto">
-                          <label for="projectOrderSubmissionDate" class="mb-1 ps-1"><small> Data złożenia </small></label>
+                          <label for="projectOrderSubmissionDate" class="mb-1 ps-1"><small> Data
+                            złożenia </small></label>
                           <InputGroup>
                             <CustomDatePicker v-model="gasConnection.gasConnectionDesign.projectOrderSubmissionDate"
                                               showIcon fluid :showOnFocus="false"
@@ -620,7 +773,8 @@ onMounted(() => {
                                   @change="() => {if(selectedMapDeliver.code !==1 ) selectedSurveyor = null} "/>
                         </div>
                         <div class="flex-auto">
-                          <label for="utilityCompanySubmissionDate" class="mb-1 ps-1"><small> Data złożenia </small></label>
+                          <label for="utilityCompanySubmissionDate" class="mb-1 ps-1"><small> Data
+                            złożenia </small></label>
                           <InputGroup>
                             <CustomDatePicker v-model="gasConnection.gasConnectionDesign.utilityCompanySubmissionDate"
                                               showIcon fluid :showOnFocus="false"
@@ -633,7 +787,8 @@ onMounted(() => {
                           </InputGroup>
                         </div>
                         <div class="flex-auto">
-                          <label for="utilityCompanyReceiptDate" class="mb-1 ps-1"><small> Data otrzymania </small></label>
+                          <label for="utilityCompanyReceiptDate" class="mb-1 ps-1"><small> Data
+                            otrzymania </small></label>
                           <InputGroup>
                             <CustomDatePicker v-model="gasConnection.gasConnectionDesign.utilityCompanyReceiptDate"
                                               showIcon fluid :showOnFocus="false"
@@ -669,28 +824,32 @@ onMounted(() => {
                       </template>
                       <div class="card flex flex-wrap gap-4">
                         <div class="flex-auto">
-                          <label for="wsgAgreementSubmissionDate" class="mb-1 ps-1"><small> Data złożenia </small></label>
+                          <label for="wsgAgreementSubmissionDate" class="mb-1 ps-1"><small> Data
+                            złożenia </small></label>
                           <CustomDatePicker v-model="gasConnection.gasConnectionDesign.wsgAgreementSubmissionDate"
                                             showIcon fluid :showOnFocus="false"
                                             inputId="wsgAgreementSubmissionDate" dateFormat="yy-mm-dd" showButtonBar
                                             :manualInput="false"/>
                         </div>
                         <div class="flex-auto">
-                          <label for="wsgAgreementReceiptDate" class="mb-1 ps-1"><small> Data otrzymania </small></label>
+                          <label for="wsgAgreementReceiptDate" class="mb-1 ps-1"><small> Data
+                            otrzymania </small></label>
                           <CustomDatePicker v-model="gasConnection.gasConnectionDesign.wsgAgreementReceiptDate" showIcon
                                             fluid :showOnFocus="false"
                                             inputId="wsgAgreementReceiptDate" dateFormat="yy-mm-dd" showButtonBar
                                             :manualInput="false"/>
                         </div>
                         <div class="flex-auto">
-                          <label for="wsgAgreementAgreementDate" class="mb-1 ps-1"><small> Data uzgodnienia </small></label>
+                          <label for="wsgAgreementAgreementDate" class="mb-1 ps-1"><small> Data
+                            uzgodnienia </small></label>
                           <CustomDatePicker v-model="gasConnection.gasConnectionDesign.wsgAgreementAgreementDate"
                                             showIcon fluid :showOnFocus="false"
                                             inputId="wsgAgreementAgreementDate" dateFormat="yy-mm-dd" showButtonBar
                                             :manualInput="false"/>
                         </div>
                         <div class="flex-auto">
-                          <label for="wsgAgreementAgreementDate" class="mb-1 ps-1"><small> Numer uzgodnienia </small></label>
+                          <label for="wsgAgreementAgreementDate" class="mb-1 ps-1"><small> Numer
+                            uzgodnienia </small></label>
                           <InputText v-model="gasConnection.gasConnectionDesign.wsgAgreementNo" fluid
                                      inputId="wsgAgreementAgreementDate"/>
                         </div>
@@ -709,7 +868,8 @@ onMounted(() => {
                       </template>
                       <div class="card flex flex-wrap gap-4">
                         <div class="flex-auto">
-                          <label for="wsgAgreementPointSchemeSubmissionDate" class="mb-1 ps-1"><small> Data złożenia </small></label>
+                          <label for="wsgAgreementPointSchemeSubmissionDate" class="mb-1 ps-1"><small> Data
+                            złożenia </small></label>
                           <CustomDatePicker
                               v-model="gasConnection.gasConnectionDesign.wsgAgreementPointSchemeSubmissionDate" showIcon
                               fluid :showOnFocus="false"
@@ -717,7 +877,8 @@ onMounted(() => {
                               :manualInput="false"/>
                         </div>
                         <div class="flex-auto">
-                          <label for="wsgAgreementPointSchemeReceiptDate" class="mb-1 ps-1"><small> Data otrzymania </small></label>
+                          <label for="wsgAgreementPointSchemeReceiptDate" class="mb-1 ps-1"><small> Data
+                            otrzymania </small></label>
                           <CustomDatePicker
                               v-model="gasConnection.gasConnectionDesign.wsgAgreementPointSchemeReceiptDate" showIcon
                               fluid :showOnFocus="false"
@@ -856,7 +1017,7 @@ onMounted(() => {
                                             :manualInput="false"/>
                         </div>
                         <div class="flex-auto">
-                          <label for="selectedTrafficSurveyor" class="block mb-0"><small> Geodeta </small></label>
+                          <label for="selectedTrafficSurveyor" class="block mb-0 ps-1"><small> Geodeta </small></label>
                           <InputGroup>
                             <Select v-model="selectedTrafficSurveyor" :options="surveyorStore.surveyorsCached"
                                     :loading="surveyorStore.loadingSurveyor"
@@ -917,11 +1078,7 @@ onMounted(() => {
                       <Column field="lastName" header="Nazwisko" headerStyle="padding: 4px 10px 4px 10px"></Column>
                       <Column field="share" header="Udział [%]" headerStyle="padding: 4px 10px 4px 10px"></Column>
                       <Column field="submissionDate" header="Data złożenia" headerStyle="padding: 4px 10px 4px 10px">
-                        <template #body="{ data }">
-                          <span class="flex justify-center">&nbsp{{
-                              UtilsService.formatDate(data.submissionDate)
-                            }}</span>
-                        </template>
+
                       </Column>
                       <Column field="receiptDate" header="Data otrzymania" headerStyle="padding: 4px 10px 4px 10px">
                         <template #body="{ data }">
@@ -1110,7 +1267,8 @@ onMounted(() => {
                         </InputGroup>
                       </div>
                       <div class="w-full">
-                        <label for="wsgFinalAcceptanceDate" class="ps-1"><small> Data wysłania do gazownii </small></label>
+                        <label for="wsgFinalAcceptanceDate" class="ps-1"><small> Data wysłania do
+                          gazownii </small></label>
                         <InputGroup>
                           <CustomDatePicker v-model="gasConnection.gasConnectionBuild.wsgFinalAcceptanceDate"
                                             showIcon fluid :showOnFocus="false"
@@ -1163,14 +1321,15 @@ onMounted(() => {
                   </Fieldset>
 
                   <!--    PGN   -->
-                  <Fieldset v-if="gasConnection.isPGN" legend="Prace gazoniebezpieczne (PGN)" :toggleable="true" class="mb-1">
+                  <Fieldset v-if="gasConnection.isPGN" legend="Prace gazoniebezpieczne (PGN)" :toggleable="true"
+                            class="mb-1">
                     <div class="card flex flex-row gap-4">
                       <div class="w-full">
                         <label for="workDate" class="ps-1"><small> Data wykonania </small></label>
-                          <CustomDatePicker v-model="gasConnection.pgn.workDate"
-                                            showIcon fluid :showOnFocus="false"
-                                            inputId="workDate" :manualInput="false" showButtonBar
-                                            dateFormat="yy-mm-dd"/>
+                        <CustomDatePicker v-model="gasConnection.pgn.workDate"
+                                          showIcon fluid :showOnFocus="false"
+                                          inputId="workDate" :manualInput="false" showButtonBar
+                                          dateFormat="yy-mm-dd"/>
                       </div>
                       <div class="flex flex-col  w-full">
                         <label for="pgnNumber" class="ps-1"><small> Nr protokołu </small></label>
@@ -1188,8 +1347,8 @@ onMounted(() => {
                       </div>
                       <div class="flex flex-col w-full">
                         <label for="pgnRecipients" class="ps-1"><small> Przyjmujący zgłoszenie </small></label>
-                          <Select v-model="selectedPgnRecipient" :options="gasConnectionStore.pgnRecipients"
-                                  class="w-full" id="pgnRecipients"/>
+                        <Select v-model="selectedPgnRecipient" :options="gasConnectionStore.pgnRecipients"
+                                class="w-full" id="pgnRecipients"/>
                       </div>
                     </div>
                     <div class="mt-3">
@@ -1200,6 +1359,310 @@ onMounted(() => {
                     </div>
                   </Fieldset>
 
+                </TabPanel>
+                <TabPanel value="3" v-if="authStore.hasAccessTasksGasConnectionFinance">
+                  <!--   -->
+                  <Panel header="KOSZTY" toggleable class="w-full mb-3 mt-3">
+                    <!--          INWENTARYZACJA          -->
+                    <Fieldset legend="Inwentaryzacja" :toggleable="true" class="mb-5">
+                      <div class="card flex flex-wrap gap-4">
+                        <div class="flex-auto">
+                          <label for="financeInventoryAmount" class="mb-1 ps-1"><small> Kwota (netto) </small></label>
+                          <InputNumber v-model="gasConnection.gasConnectionFinance.financeInventoryAmount"
+                                       inputId="financeInventoryAmount"
+                                       locale="pl-PL" mode="currency" currency="PLN"
+                                       :maxFractionDigits="2" fluid/>
+                        </div>
+                        <div class="flex-auto">
+                          <label for="financeInventoryDate" class="mb-1 ps-1"><small> Data
+                            zapłaty </small></label>
+                          <CustomDatePicker v-model="gasConnection.gasConnectionFinance.financeInventoryDate"
+                                            showIcon fluid :showOnFocus="false"
+                                            inputId="financeInventoryDate" dateFormat="yy-mm-dd" showButtonBar
+                                            :manualInput="false"/>
+                        </div>
+                      </div>
+                    </Fieldset>
+                    <!--         PROJEKT           -->
+                    <Fieldset legend="Projekt" :toggleable="true" class="mb-5">
+                      <div class="card flex flex-wrap gap-4">
+                        <div class="flex-auto">
+                          <label for="financeProjectAmount" class="mb-1 ps-1"><small> Kwota (netto) </small></label>
+                          <InputNumber v-model="gasConnection.gasConnectionFinance.financeProjectAmount"
+                                       inputId="financeProjectAmount"
+                                       locale="pl-PL" mode="currency" currency="PLN"
+                                       :maxFractionDigits="2" fluid/>
+                        </div>
+                        <div class="flex-auto">
+                          <label for="financeProjectDate" class="mb-1 ps-1"><small> Data
+                            zapłaty </small></label>
+                          <CustomDatePicker v-model="gasConnection.gasConnectionFinance.financeProjectDate"
+                                            showIcon fluid :showOnFocus="false"
+                                            inputId="financeProjectDate" dateFormat="yy-mm-dd" showButtonBar
+                                            :manualInput="false"/>
+                        </div>
+                      </div>
+                    </Fieldset>
+                    <!--          PAS DROGOWY          -->
+                    <Fieldset legend="Pas drogowy" :toggleable="true" class="mb-5">
+                      <div class="card flex flex-wrap gap-4">
+                        <div class="flex-auto">
+                          <label for="financeRoadPastureAmount" class="mb-1 ps-1"><small> Kwota (netto) </small></label>
+                          <InputNumber v-model="gasConnection.gasConnectionFinance.financeRoadPastureAmount"
+                                       inputId="financeRoadPastureAmount"
+                                       locale="pl-PL" mode="currency" currency="PLN"
+                                       :maxFractionDigits="2" fluid/>
+                        </div>
+                        <div class="flex-auto">
+                          <label for="financeRoadPastureDate" class="mb-1 ps-1"><small> Data
+                            zapłaty </small></label>
+                          <CustomDatePicker v-model="gasConnection.gasConnectionFinance.financeRoadPastureDate"
+                                            showIcon fluid :showOnFocus="false"
+                                            inputId="financeRoadPastureDate" dateFormat="yy-mm-dd" showButtonBar
+                                            :manualInput="false"/>
+                        </div>
+                      </div>
+                    </Fieldset>
+                  </Panel>
+
+                  <!--   TABELA     -->
+                  <Panel header="KOSZTY DODATKOWE" toggleable class="w-full mb-3 mt-3">
+
+                    <Toolbar class="mt-6" style="min-width: 50rem">
+                      <template #start>
+                        <OfficeButton btn-type="office-regular" text="Dodaj" icon="pi pi-plus" class="mr-2" @click=""/>
+                        <OfficeButton btn-type="office-save" text="usuń" icon="pi pi-trash" @click=""
+                                      :disabled="!selectedCosts || !selectedCosts.length"/>
+                      </template>
+                    </Toolbar>
+                    <DataTable :value="gasConnection.gasConnectionFinance.costList" tableStyle="min-width: 50rem"
+                               showGridlines
+                    >
+                      <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+                      <Column field="lp" header="Lp" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ index }">
+                          <span class="pl-2">{{ index + 1 }}</span>
+                        </template>
+                      </Column>
+                      <Column field="costType.name" header="Nazwa" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{
+                              data.costType.name
+                            }}</span>
+                        </template>
+                      </Column>
+                      <Column field="amount" header="Kwota netto" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class=" pl-2">{{
+                              UtilsService.formatCurrency(data.amount)
+                            }}</span>
+                        </template>
+                      </Column>
+                      <Column field="paymentDate" header="Data zapł." headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{
+                              UtilsService.formatDate(data.paymentDate)
+                            }}</span>
+                        </template>
+                      </Column>
+                      <Column field="info" header="Informacje" headerStyle="padding: 4px 10px 4px 10px"
+                              style="min-width: 150px"></Column>
+                      <Column :exportable="false" style=" max-width: 80px;">
+                        <template #body="slotProps">
+                          <div class="flex justify-center">
+                            <Button icon="pi pi-pencil" outlined rounded class="mr-2" @click="console.log(slotProps)"/>
+                            <Button icon="pi pi-trash" outlined rounded severity="danger" @click=""/>
+
+                          </div>
+                        </template>
+                      </Column>
+                    </DataTable>
+                  </Panel>
+                </TabPanel>
+                <TabPanel value="4" v-if="authStore.hasAccessFinance">
+                  <!--   TABELA     -->
+                  <Panel header="FAKTURY" toggleable class="w-full mb-3 mt-3">
+
+                    <Toolbar class="mt-6" style="min-width: 50rem">
+                      <template #start>
+                        <OfficeButton btn-type="office-regular" text="Dodaj" icon="pi pi-plus" class="mr-2" @click=""/>
+                      </template>
+                    </Toolbar>
+                    <DataTable :value="invoices" tableStyle="min-width: 50rem" showGridlines
+                    >
+                      <Column header="Nazwa" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{ data.idInvoiceYear }}/{{ data.idInvoiceNumber }}</span>
+                        </template>
+                      </Column>
+                      <Column field="invoiceDate" header="Data wystawienia" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{
+                              UtilsService.formatDate(data.invoiceDate)
+                            }}</span>
+                        </template>
+                      </Column>
+                      <Column field="amountNet" header="Kwota netto" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class=" pl-2">{{
+                              UtilsService.formatCurrency(data.amountNet)
+                            }}</span>
+                        </template>
+                      </Column>
+                      <Column header="Procent" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class=" pl-2">{{
+                              UtilsService.calculatePercentagePaid(data.amountNet, gasConnection.taskValue).toFixed(2)
+                            }}%</span>
+                        </template>
+                      </Column>
+                      <ColumnGroup type="footer">
+                        <Row>
+                          <Column footer="Razem:" :colspan="2" footerStyle="text-align:right"/>
+                          <Column :footer="amountTotal"/>
+                          <Column :footer="percentTotal.toFixed(2)+'%'"/>
+                        </Row>
+                      </ColumnGroup>
+                    </DataTable>
+                  </Panel>
+                </TabPanel>
+                <TabPanel value="5">
+                  <!--   TABELA    PRZYŁĄCZE -->
+                  <Panel header="ZAKRES - PRZYŁĄCZE" toggleable class="w-full mb-3 mt-3"
+                         :collapsed="+gasConnection.workRangeGasConnections.length == 0">
+
+                    <Toolbar class="mt-6" style="min-width: 50rem">
+                      <template #start>
+                        <OfficeButton btn-type="office-regular" text="Dodaj" icon="pi pi-plus" class="mr-2" @click=""/>
+                      </template>
+                    </Toolbar>
+                    <DataTable :value="gasConnection.workRangeGasConnections" tableStyle="min-width: 50rem"
+                               showGridlines
+                    >
+                      <Column field="diameter" header="Średnica" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.diameter }}</span>
+                        </template>
+                      </Column>
+                      <Column field="lengthWar" header="Dł. z warunków (m)" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.lengthWar }}</span>
+                        </template>
+                      </Column>
+                      <Column field="lengthProj" header="Dł. z projektu (m)" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.lengthProj }}</span>
+                        </template>
+                      </Column>
+                      <Column field="gasCabinetProviderType" header="Szafka" headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.gasCabinetProviderType.viewValue }}</span>
+                        </template>
+                      </Column>
+                      <Column field="gasCabinetPickupDate" header="Data odb. szafki"
+                              headerStyle="padding: 4px 10px 4px 10px">
+                        <template #body="{ data }">
+                          <span
+                              class="flex justify-center">{{ UtilsService.formatDate(data.gasCabinetPickupDate) }}</span>
+                        </template>
+                      </Column>
+                      <Column header="info" headerStyle="padding: 4px 10px 4px 10px; min-width: 180px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{ data.info }}</span>
+                        </template>
+                      </Column>
+                    </DataTable>
+                  </Panel>
+
+                  <!--   TABELA  STACJA   -->
+                  <Panel header="ZAKRES - STACJA" toggleable class="w-full mb-3 mt-3"
+                         :collapsed="+gasConnection.workRangeGasStations.length == 0">
+
+                    <Toolbar class="mt-6" style="min-width: 50rem">
+                      <template #start>
+                        <OfficeButton btn-type="office-regular" text="Dodaj" icon="pi pi-plus" class="mr-2" @click=""/>
+                      </template>
+                    </Toolbar>
+                    <DataTable :value="gasConnection.workRangeGasStations" tableStyle="min-width: 50rem" showGridlines
+                    >
+                      <Column field="capacity" header="Przepustowość"
+                              headerStyle="padding: 4px 10px 4px 10px; max-width: 60px;">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.capacity }}</span>
+                        </template>
+                      </Column>
+                      <Column field="stationType" header="Rodzaj stacji" headerStyle="padding: 4px 10px 4px 10px;">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{ data.stationType.viewValue }}</span>
+                        </template>
+                      </Column>
+                      <Column field="amount" header="Ilość" headerStyle="padding: 4px 10px 4px 10px"
+                              header-class="flex justify-center">
+                        <template #body="{ data }">
+                          <span class="flex justify-center">{{ data.amount }}</span>
+                        </template>
+                      </Column>
+                      <Column header="info" headerStyle="padding: 4px 10px 4px 10px; min-width: 180px">
+                        <template #body="{ data }">
+                          <span class="pl-2">{{ data.info }}</span>
+                        </template>
+                      </Column>
+                    </DataTable>
+                  </Panel>
+
+                  <Panel header="ZAKRES - WŁĄCZENIE" toggleable class="w-full mb-3 mt-3">
+                    <!--    WŁĄCZENIE  -->
+                    <Fieldset legend="Istniejący gazociąg" class="mb-1">
+                      <div class="card flex items-center gap-4 mt-3">
+                        <div class="flex-auto">
+                          <label for="pressure" class="block mb-0 ps-1"><small> Ciśnienie </small></label>
+                          <InputGroup>
+                            <Select v-model="gasConnection.workRangeConnection.pressure"
+                                    :options="commonStore.getPressureTypes()"
+                                    :optionLabel="(p) => p.displayValue"
+                                    class="w-full" id="pressure"/>
+                            <InputGroupAddon class="p-0">
+                              <Button class="btn-icon" outlined icon="pi pi-eraser"
+                                      :disabled="!(gasConnection.workRangeConnection.pressure !== undefined)"
+                                      @click="gasConnection.workRangeConnection.pressure = undefined"/>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </div>
+                        <div class="flex-auto">
+                          <label for="diameter" class="block mb-0 ps-1"><small> Średnica nominalna </small></label>
+                          <InputGroup>
+                            <Select v-model="gasConnection.workRangeConnection.diameter"
+                                    :options="commonStore.getDiameters()"
+                                    class="w-full" id="diameter"/>
+                            <InputGroupAddon class="p-0">
+                              <Button class="btn-icon" outlined icon="pi pi-eraser"
+                                      :disabled="!(gasConnection.workRangeConnection.diameter!==undefined)"
+                                      @click="gasConnection.workRangeConnection.diameter = undefined"/>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </div>
+                        <div class="flex-auto">
+                          <label for="material" class="block mb-0 ps-1"><small> Materiał </small></label>
+                          <InputGroup>
+                            <Select v-model="gasConnection.workRangeConnection.material"
+                                    :options="commonStore.getMaterials()"
+                                    class="w-full" id="material"/>
+                            <InputGroupAddon class="p-0">
+                              <Button class="btn-icon" outlined icon="pi pi-eraser"
+                                      :disabled="!(gasConnection.workRangeConnection.material!==undefined)"
+                                      @click="gasConnection.workRangeConnection.material = undefined"/>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </div>
+                      </div>
+                      <div class="mt-3">
+
+                        <label for="workRangeConnection.info" class="ps-1"><small> Uwagi </small></label>
+                        <Textarea :rows="5" autoResize fluid id="workRangeConnection.info"
+                                  v-model="gasConnection.workRangeConnection.info"></Textarea>
+                      </div>
+                    </Fieldset>
+                  </Panel>
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -1221,11 +1684,12 @@ onMounted(() => {
 </template>
 <style scoped>
 .left-side {
-  margin-right: 0.5rem !important;
+  margin-right: 0.7rem !important;
+  font-size: .9rem !important;
 }
 
 .right-side {
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 
 }
 

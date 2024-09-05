@@ -5,6 +5,7 @@ import Toast from "primevue/toast";
 
 <template>
   <Toast class="min-w-max" />
+  <DynamicDialog />
   <TheHeader />
   <router-view />
 </template>

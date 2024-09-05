@@ -33,8 +33,9 @@ pinia.use(({ store }) => {
 
 const app = createApp(App);
 
-app.use(PrimeVue, {
-    // Default theme configuration
+app.use(pinia);
+app.use(router);
+app.use(PrimeVue,{
     theme: {
         preset: Noir,
         options: {
@@ -42,12 +43,7 @@ app.use(PrimeVue, {
             darkModeSelector: '.p-dark' ,
             cssLayer: false
         }
-    }
-});
-
-app.use(pinia);
-app.use(router);
-app.use(PrimeVue,{
+    },
     locale:{
         "accept": "Tak",
         "addRule": "Dodaj regułę",

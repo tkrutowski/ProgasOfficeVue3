@@ -121,6 +121,7 @@ export const useAuthorizationStore = defineStore("authorization", {
                 const decoded: any = jwt_decode(this.token);
                 return (
                     decoded.authorities.includes("ROLE_TASKS_CONNECTION_FINANCE") ||
+                    decoded.authorities.includes("ROLE_FINANCE") ||
                     decoded.authorities.includes("ROLE_ADMIN")
                 );
             } catch (error) {

@@ -5,7 +5,7 @@ import {Address} from "@/types/Address.ts";
 import {Surveyor} from "@/types/Surveyor.ts";
 import {UtilityCompanyType} from "@/types/Commons.ts";
 import {Plot} from "@/types/Plot.ts";
-import {WorkRangeGasConnection, WorkRangeGasStation} from "@/types/WorkRange.ts";
+import {WorkRangeConnection, WorkRangeGasConnection, WorkRangeGasStation} from "@/types/WorkRange.ts";
 import {TaskType} from "@/types/TaskType.ts";
 import {Stage} from "@/types/Enums.ts";
 
@@ -18,6 +18,7 @@ export interface GasConnection {
     plots: Plot[];
     workRangeGasConnections: WorkRangeGasConnection[];
     workRangeGasStations: WorkRangeGasStation[];
+    workRangeConnection: WorkRangeConnection;
     pgn: Pgn;
 
     taskNo: string;
@@ -43,6 +44,7 @@ export interface GasConnection {
     stage: Stage;
     gasConnectionDesign: GasConnectionDesign;
     gasConnectionBuild: GasConnectionBuild;
+    gasConnectionFinance: GasConnectionFinance;
 }
 
 export interface GasConnectionDesign {
@@ -100,6 +102,32 @@ export interface GasConnectionBuild {
     technicalAcceptanceProtocolNo: string;
     gasPipelineInventoryNumber: string;
     wsgInfo: string;
+}
+
+export interface GasConnectionFinance {
+    financeInventoryAmount:number;
+    financeInventoryDate: undefined | Date;
+    financeProjectAmount: number;
+    financeProjectDate: undefined | Date;
+    financeRoadPastureAmount: number;
+    financeRoadPastureDate: undefined | Date;
+    costList: Cost[] | [];
+
+}
+
+export interface Cost {
+    id: number;
+    idTask: number;
+    costType: CostType;
+    paymentDate: undefined | Date;
+    amount: number;
+    taskType: TaskType;
+    description: string;
+}
+
+export interface CostType {
+    id: number;
+    name: string;
 }
 
 export interface Pgn {
